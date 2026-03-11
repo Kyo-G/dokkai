@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { BookMarked, Trash2, ChevronRight, Loader2 } from 'lucide-react'
+import { BookMarked, Trash2, ChevronRight, Loader2, Download } from 'lucide-react'
 import { getWords, deleteWord, getGrammars, deleteGrammar } from '../lib/db'
 import type { Word, WordInSentence, SavedGrammar } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
+import { isAudioCached, fetchTTS, storeBlob } from '../lib/audioCache'
 
 type Tab = 'words' | 'grammar'
 
@@ -13,6 +14,8 @@ export default function VocabPage() {
   const [loading, setLoading] = useState(true)
   const [selectedWord, setSelectedWord] = useState<Word | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [caching, setCaching] = useState(false)
+  const [cacheProgress, setCacheProgress] = useState<{done: number, total: number} | null>(null)
 
   useEffect(() => {
     load()
@@ -56,14 +59,45 @@ export default function VocabPage() {
     return { word: w.word, reading: w.reading, pos: w.pos, meaning: w.meaning }
   }
 
+  async function handleCacheAll() {
+    const uncached: string[] = []
+    for (const w of words) {
+      if (!(await isAudioCached(w.word))) uncached.push(w.word)
+    }
+    if (uncached.length === 0) return
+    setCaching(true)
+    setCacheProgress({ done: 0, total: uncached.length })
+    for (let i = 0; i < uncached.length; i++) {
+      try {
+        const blob = await fetchTTS(uncached[i])
+        await storeBlob(uncached[i], blob)
+      } catch { /* skip on error */ }
+      setCacheProgress({ done: i + 1, total: uncached.length })
+    }
+    setCaching(false)
+    setCacheProgress(null)
+  }
+
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-xl font-bold text-gray-900">收藏</h1>
-        <p className="text-xs text-gray-400 mt-0.5">
-          {words.length} 个单词 · {grammars.length} 个语法
-        </p>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">收藏</h1>
+          <p className="text-xs text-gray-400 mt-0.5">{words.length} 个单词 · {grammars.length} 个语法</p>
+        </div>
+        {tab === 'words' && words.length > 0 && (
+          <button
+            onClick={handleCacheAll}
+            disabled={caching}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 disabled:opacity-50"
+          >
+            {caching
+              ? <><Loader2 size={14} className="animate-spin" />{cacheProgress ? `${cacheProgress.done}/${cacheProgress.total}` : '…'}</>
+              : <><Download size={14} />缓存读音</>
+            }
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
