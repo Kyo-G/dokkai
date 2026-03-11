@@ -37,7 +37,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
   const [error, setError] = useState('')
   const [analysis, setAnalysis] = useState<SentenceAnalysis | null>(sentence.analysis_cache)
   const [selectedWord, setSelectedWord] = useState<WordInSentence | null>(null)
-  const { speak, stop, speaking, hasJapaneseVoice } = useSpeech()
+  const { speak, stop, speaking } = useSpeech()
   const [savedGrammars, setSavedGrammars] = useState<Set<string>>(new Set())
   const [savingGrammar, setSavingGrammar] = useState<string | null>(null)
 
@@ -100,11 +100,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
             </div>
           </button>
           <button
-            onClick={e => {
-              e.stopPropagation()
-              if (!hasJapaneseVoice) { alert('未检测到日语语音包，请在手机设置→语言→文字转语音中安装日语语音'); return }
-              speaking ? stop() : speak(sentence.content)
-            }}
+            onClick={e => { e.stopPropagation(); speaking ? stop() : speak(sentence.content) }}
             className="mt-1 shrink-0 text-gray-400 active:text-red-600"
           >
             {speaking ? <Square size={16} fill="currentColor" /> : <Volume2 size={18} />}
