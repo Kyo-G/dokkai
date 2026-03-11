@@ -1,7 +1,8 @@
 import { supabase } from './supabase'
 import type {
   Article, Sentence, Word, ReviewRecord,
-  SentenceAnalysis, WordDetails, ArticleLevel, ReviewGrade
+  SentenceAnalysis, WordDetails, ArticleLevel, ReviewGrade,
+  SavedGrammar, GrammarReviewRecord
 } from '../types'
 import { sm2Next, initialSM2State, addDays } from './sm2'
 import { splitIntoSentences } from './sentences'
@@ -166,28 +167,110 @@ export async function saveWordDetails(
 }
 
 // ──────────────────────────────────────────────
+// Grammar points
+// ──────────────────────────────────────────────
+
+export async function getGrammars(): Promise<SavedGrammar[]> {
+  const { data, error } = await supabase
+    .from('grammar_points')
+    .select(`*, articles(title)`)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map((g: SavedGrammar & { articles?: { title: string } | null }) => ({
+    ...g,
+    article_title: g.articles?.title,
+  }))
+}
+
+export async function addGrammar(
+  pattern: string,
+  meaning: string,
+  usage: string,
+  jlpt: string,
+  articleId: string | null
+): Promise<SavedGrammar> {
+  const { data: existing } = await supabase
+    .from('grammar_points')
+    .select('id')
+    .eq('pattern', pattern)
+    .maybeSingle()
+
+  if (existing) throw new Error('该语法已在收藏中')
+
+  const { data, error } = await supabase
+    .from('grammar_points')
+    .insert({ pattern, meaning, usage, jlpt, article_id: articleId })
+    .select()
+    .single()
+  if (error) throw error
+
+  const tomorrow = addDays(new Date(), 1)
+  await supabase.from('grammar_review_records').insert({
+    grammar_id: data.id,
+    next_review_date: tomorrow.toISOString().split('T')[0],
+    interval: initialSM2State.interval,
+    ease_factor: initialSM2State.easeFactor,
+  })
+
+  return data
+}
+
+export async function deleteGrammar(id: string): Promise<void> {
+  await supabase.from('grammar_review_records').delete().eq('grammar_id', id)
+  const { error } = await supabase.from('grammar_points').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ──────────────────────────────────────────────
 // Review Records
 // ──────────────────────────────────────────────
 
-export async function getDueReviews(): Promise<(ReviewRecord & { word: Word })[]> {
+export type WordReviewItem = ReviewRecord & { type: 'word'; word: Word }
+export type GrammarReviewItem = GrammarReviewRecord & { type: 'grammar'; grammar: SavedGrammar }
+export type AnyReviewItem = WordReviewItem | GrammarReviewItem
+
+export async function getDueReviews(): Promise<AnyReviewItem[]> {
   const today = new Date().toISOString().split('T')[0]
-  const { data, error } = await supabase
-    .from('review_records')
-    .select(`*, word:words(*)`)
-    .lte('next_review_date', today)
-    .order('next_review_date', { ascending: true })
-  if (error) throw error
-  return data || []
+  const [wordsRes, grammarRes] = await Promise.all([
+    supabase.from('review_records').select(`*, word:words(*)`).lte('next_review_date', today),
+    supabase.from('grammar_review_records').select(`*, grammar:grammar_points(*)`).lte('next_review_date', today),
+  ])
+  if (wordsRes.error) throw wordsRes.error
+  if (grammarRes.error) throw grammarRes.error
+
+  const wordItems: WordReviewItem[] = (wordsRes.data || []).map(r => ({ ...r, type: 'word' as const }))
+  const grammarItems: GrammarReviewItem[] = (grammarRes.data || []).map(r => ({ ...r, type: 'grammar' as const }))
+
+  return [...wordItems, ...grammarItems].sort(
+    (a, b) => a.next_review_date.localeCompare(b.next_review_date)
+  )
 }
 
 export async function getDueCount(): Promise<number> {
   const today = new Date().toISOString().split('T')[0]
-  const { count, error } = await supabase
-    .from('review_records')
-    .select('*', { count: 'exact', head: true })
-    .lte('next_review_date', today)
+  const [wordsRes, grammarRes] = await Promise.all([
+    supabase.from('review_records').select('*', { count: 'exact', head: true }).lte('next_review_date', today),
+    supabase.from('grammar_review_records').select('*', { count: 'exact', head: true }).lte('next_review_date', today),
+  ])
+  return (wordsRes.count || 0) + (grammarRes.count || 0)
+}
+
+export async function submitGrammarReview(
+  recordId: string,
+  currentInterval: number,
+  currentEase: number,
+  grade: ReviewGrade
+): Promise<void> {
+  const state = sm2Next(
+    { interval: currentInterval, easeFactor: currentEase, repetitions: 1 },
+    grade
+  )
+  const nextDate = addDays(new Date(), state.interval)
+  const { error } = await supabase
+    .from('grammar_review_records')
+    .update({ interval: state.interval, ease_factor: state.easeFactor, next_review_date: nextDate.toISOString().split('T')[0] })
+    .eq('id', recordId)
   if (error) throw error
-  return count || 0
 }
 
 export async function submitReview(

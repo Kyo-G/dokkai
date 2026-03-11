@@ -48,14 +48,41 @@ CREATE TABLE IF NOT EXISTS review_records (
 
 CREATE INDEX IF NOT EXISTS idx_review_records_next_date ON review_records(next_review_date);
 
+-- Grammar points table
+CREATE TABLE IF NOT EXISTS grammar_points (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pattern TEXT NOT NULL UNIQUE,
+  meaning TEXT NOT NULL,
+  usage TEXT NOT NULL DEFAULT '',
+  jlpt TEXT NOT NULL DEFAULT '',
+  article_id UUID REFERENCES articles(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Grammar review records table (SM-2 spaced repetition)
+CREATE TABLE IF NOT EXISTS grammar_review_records (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  grammar_id UUID REFERENCES grammar_points(id) ON DELETE CASCADE UNIQUE,
+  next_review_date DATE NOT NULL,
+  interval INTEGER NOT NULL DEFAULT 1,
+  ease_factor FLOAT NOT NULL DEFAULT 2.5,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_grammar_review_next_date ON grammar_review_records(next_review_date);
+
 -- Enable RLS (Row Level Security) — open policies for personal use
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sentences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE words ENABLE ROW LEVEL SECURITY;
 ALTER TABLE review_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grammar_points ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grammar_review_records ENABLE ROW LEVEL SECURITY;
 
 -- Allow all operations (personal use, no auth)
 CREATE POLICY "Allow all" ON articles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON sentences FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON words FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all" ON review_records FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON grammar_points FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON grammar_review_records FOR ALL USING (true) WITH CHECK (true);

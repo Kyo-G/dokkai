@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { RotateCcw, Check, Loader2, PartyPopper } from 'lucide-react'
-import { getDueReviews, submitReview } from '../lib/db'
-import type { ReviewRecord, Word, ReviewGrade } from '../types'
+import { getDueReviews, submitReview, submitGrammarReview } from '../lib/db'
+import type { AnyReviewItem } from '../lib/db'
+import type { ReviewGrade } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
 import type { WordInSentence } from '../types'
-
-type ReviewItem = ReviewRecord & { word: Word }
 
 const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string }[] = [
   { grade: 0, label: '忘了', color: 'bg-red-100 text-red-700 border-red-200' },
@@ -15,7 +14,7 @@ const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string }[] = [
 ]
 
 export default function ReviewPage() {
-  const [queue, setQueue] = useState<ReviewItem[]>([])
+  const [queue, setQueue] = useState<AnyReviewItem[]>([])
   const [loading, setLoading] = useState(true)
   const [flipped, setFlipped] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -23,9 +22,7 @@ export default function ReviewPage() {
   const [total, setTotal] = useState(0)
   const [showDetail, setShowDetail] = useState(false)
 
-  useEffect(() => {
-    load()
-  }, [])
+  useEffect(() => { load() }, [])
 
   async function load() {
     setLoading(true)
@@ -47,7 +44,11 @@ export default function ReviewPage() {
     if (!current) return
     setSubmitting(true)
     try {
-      await submitReview(current.id, current.interval, current.ease_factor, grade)
+      if (current.type === 'word') {
+        await submitReview(current.id, current.interval, current.ease_factor, grade)
+      } else {
+        await submitGrammarReview(current.id, current.interval, current.ease_factor, grade)
+      }
       setQueue(prev => prev.slice(1))
       setDone(prev => prev + 1)
       setFlipped(false)
@@ -69,36 +70,36 @@ export default function ReviewPage() {
     )
   }
 
-  // All done
   if (total > 0 && queue.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
         <PartyPopper size={56} className="text-yellow-500 mb-4" />
         <h2 className="text-xl font-bold text-gray-900 mb-2">今日复习完成！</h2>
-        <p className="text-gray-500 text-sm">共复习了 {done} 个单词</p>
-        <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600">
-          再次检查
-        </button>
+        <p className="text-gray-500 text-sm">共复习了 {done} 项</p>
+        <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600">再次检查</button>
       </div>
     )
   }
 
-  // Nothing due
   if (total === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
         <Check size={56} className="text-green-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 mb-2">今天没有待复习单词</h2>
-        <p className="text-gray-500 text-sm">先去阅读文章，把单词加入生词本吧</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">今天没有待复习内容</h2>
+        <p className="text-gray-500 text-sm">先去阅读文章，收藏单词和语法吧</p>
         <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600">
-          <RotateCcw size={16} className="inline mr-1" />
-          刷新
+          <RotateCcw size={16} className="inline mr-1" />刷新
         </button>
       </div>
     )
   }
 
-  function wordToWordInSentence(w: Word): WordInSentence {
+  const isWord = current?.type === 'word'
+  const isGrammar = current?.type === 'grammar'
+
+  function wordToWordInSentence(): WordInSentence | null {
+    if (!current || !isWord) return null
+    const w = (current as Extract<AnyReviewItem, { type: 'word' }>).word
     return { word: w.word, reading: w.reading, pos: w.pos, meaning: w.meaning }
   }
 
@@ -110,28 +111,36 @@ export default function ReviewPage() {
           <h1 className="text-xl font-bold text-gray-900">每日复习</h1>
           <span className="text-sm text-gray-400">{done} / {total}</span>
         </div>
-        {/* Progress bar */}
         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-red-700 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-red-700 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {current && (
         <>
-          {/* Card */}
           <div className="flex-1 flex flex-col justify-center">
             <button
               onClick={() => !flipped && setFlipped(true)}
-              className={`w-full bg-white border-2 rounded-3xl p-8 text-center shadow-sm
-                ${flipped ? 'border-gray-200' : 'border-gray-200 active:border-red-300'}`}
+              className="w-full bg-white border-2 border-gray-200 rounded-3xl p-8 text-center shadow-sm"
             >
-              {/* Front: word */}
-              <div className="font-jp text-4xl font-bold text-gray-900 mb-2" lang="ja">
-                {current.word.word}
+              {/* Type badge */}
+              <div className="mb-4">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${isWord ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {isWord ? '单词' : '语法'}
+                </span>
               </div>
+
+              {/* Front: key item */}
+              {isWord && (
+                <div className="font-jp text-4xl font-bold text-gray-900 mb-2" lang="ja">
+                  {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
+                </div>
+              )}
+              {isGrammar && (
+                <div className="font-jp text-3xl font-bold text-amber-900 mb-2" lang="ja">
+                  {(current as Extract<AnyReviewItem, { type: 'grammar' }>).grammar.pattern}
+                </div>
+              )}
 
               {!flipped && (
                 <div className="text-sm text-gray-400 mt-4">点击翻转查看答案</div>
@@ -140,35 +149,50 @@ export default function ReviewPage() {
               {flipped && (
                 <div className="mt-4 space-y-3 text-left">
                   <div className="h-px bg-gray-100" />
-                  <div className="text-center">
-                    <div className="text-xl text-gray-600 font-jp" lang="ja">{current.word.reading}</div>
-                    <div className="text-xs text-gray-400 mt-1">{current.word.pos}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg text-gray-900 font-medium">{current.word.meaning}</div>
-                  </div>
-                  {current.word.details_cache?.examples?.[0] && (
-                    <div className="bg-gray-50 rounded-xl p-3 mt-2">
-                      <div className="font-jp text-sm text-gray-700" lang="ja">
-                        {current.word.details_cache.examples[0].japanese}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {current.word.details_cache.examples[0].chinese}
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    onClick={e => { e.stopPropagation(); setShowDetail(true) }}
-                    className="text-xs text-red-700 underline w-full text-center mt-1"
-                  >
-                    查看详情
-                  </button>
+
+                  {isWord && (() => {
+                    const w = (current as Extract<AnyReviewItem, { type: 'word' }>).word
+                    return (
+                      <>
+                        <div className="text-center">
+                          <div className="text-xl text-gray-600 font-jp" lang="ja">{w.reading}</div>
+                          <div className="text-xs text-gray-400 mt-1">{w.pos}</div>
+                        </div>
+                        <div className="text-center text-lg text-gray-900 font-medium">{w.meaning}</div>
+                        {w.details_cache?.examples?.[0] && (
+                          <div className="bg-gray-50 rounded-xl p-3 mt-2">
+                            <div className="font-jp text-sm text-gray-700" lang="ja">{w.details_cache.examples[0].japanese}</div>
+                            <div className="text-xs text-gray-500 mt-1">{w.details_cache.examples[0].chinese}</div>
+                          </div>
+                        )}
+                        <button onClick={e => { e.stopPropagation(); setShowDetail(true) }} className="text-xs text-red-700 underline w-full text-center mt-1">
+                          查看详情
+                        </button>
+                      </>
+                    )
+                  })()}
+
+                  {isGrammar && (() => {
+                    const g = (current as Extract<AnyReviewItem, { type: 'grammar' }>).grammar
+                    return (
+                      <>
+                        <div className="text-center text-lg text-gray-900 font-medium">{g.meaning}</div>
+                        {g.usage && (
+                          <div className="bg-amber-50 rounded-xl p-3 text-sm text-gray-700 text-left">{g.usage}</div>
+                        )}
+                        {g.jlpt && (
+                          <div className="text-center">
+                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{g.jlpt}</span>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               )}
             </button>
           </div>
 
-          {/* Grade buttons */}
           {flipped && (
             <div className="mt-6 grid grid-cols-4 gap-2 pb-24">
               {GRADE_BUTTONS.map(({ grade, label, color }) => (
@@ -183,18 +207,15 @@ export default function ReviewPage() {
               ))}
             </div>
           )}
-
-          {!flipped && (
-            <div className="pb-24" />
-          )}
+          {!flipped && <div className="pb-24" />}
         </>
       )}
 
-      {showDetail && current && (
+      {showDetail && current?.type === 'word' && wordToWordInSentence() && (
         <WordDetailSheet
-          wordInfo={wordToWordInSentence(current.word)}
-          articleId={current.word.article_id}
-          existingWord={current.word}
+          wordInfo={wordToWordInSentence()!}
+          articleId={(current as Extract<AnyReviewItem, { type: 'word' }>).word.article_id}
+          existingWord={(current as Extract<AnyReviewItem, { type: 'word' }>).word}
           onClose={() => setShowDetail(false)}
         />
       )}

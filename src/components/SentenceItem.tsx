@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
-import type { Sentence, SentenceAnalysis, WordInSentence } from '../types'
+import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Check } from 'lucide-react'
+import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint } from '../types'
 import { analyzeSentence } from '../lib/ai'
-import { saveSentenceAnalysis } from '../lib/db'
+import { saveSentenceAnalysis, addGrammar } from '../lib/db'
 import { useSettings } from '../hooks/useSettings'
 import WordDetailSheet from './WordDetailSheet'
 
@@ -36,6 +36,8 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
   const [error, setError] = useState('')
   const [analysis, setAnalysis] = useState<SentenceAnalysis | null>(sentence.analysis_cache)
   const [selectedWord, setSelectedWord] = useState<WordInSentence | null>(null)
+  const [savedGrammars, setSavedGrammars] = useState<Set<string>>(new Set())
+  const [savingGrammar, setSavingGrammar] = useState<string | null>(null)
 
   async function handleExpand() {
     if (expanded) {
@@ -57,6 +59,23 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
       setExpanded(false)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleSaveGrammar(g: GrammarPoint) {
+    const key = g.pattern
+    setSavingGrammar(key)
+    try {
+      await addGrammar(g.pattern, g.meaning, g.usage, g.jlpt || '', articleId)
+      setSavedGrammars(prev => new Set(prev).add(key))
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('已在收藏')) {
+        setSavedGrammars(prev => new Set(prev).add(key))
+      } else {
+        alert(e instanceof Error ? e.message : '收藏失败')
+      }
+    } finally {
+      setSavingGrammar(null)
     }
   }
 
@@ -112,20 +131,38 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
               <div>
                 <div className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">语法点</div>
                 <div className="space-y-2">
-                  {analysis.grammar.map((g, i) => (
-                    <div key={i} className="bg-amber-50 rounded-xl p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-jp font-bold text-amber-900" lang="ja">{g.pattern}</span>
-                        {g.jlpt && (
-                          <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">
-                            {g.jlpt}
-                          </span>
-                        )}
-                        <span className="text-amber-700 text-sm">— {g.meaning}</span>
+                  {analysis.grammar.map((g, i) => {
+                    const saved = savedGrammars.has(g.pattern)
+                    const saving = savingGrammar === g.pattern
+                    return (
+                      <div key={i} className="bg-amber-50 rounded-xl p-3">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-jp font-bold text-amber-900" lang="ja">{g.pattern}</span>
+                            {g.jlpt && (
+                              <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">
+                                {g.jlpt}
+                              </span>
+                            )}
+                            <span className="text-amber-700 text-sm">— {g.meaning}</span>
+                          </div>
+                          <button
+                            onClick={() => !saved && handleSaveGrammar(g)}
+                            className="shrink-0 mt-0.5"
+                            disabled={saving}
+                          >
+                            {saving
+                              ? <Loader2 size={15} className="animate-spin text-amber-400" />
+                              : saved
+                                ? <Check size={15} className="text-green-600" />
+                                : <BookmarkPlus size={15} className="text-amber-400" />
+                            }
+                          </button>
+                        </div>
+                        <div className="text-gray-600 text-sm">{g.usage}</div>
                       </div>
-                      <div className="text-gray-600 text-sm">{g.usage}</div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}

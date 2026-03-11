@@ -90,4 +90,24 @@ export interface ReviewRecord {
   created_at: string
 }
 
+export interface SavedGrammar {
+  id: string
+  pattern: string
+  meaning: string
+  usage: string
+  jlpt: string
+  article_id: string | null
+  article_title?: string
+  created_at: string
+}
+
+export interface GrammarReviewRecord {
+  id: string
+  grammar_id: string
+  next_review_date: string
+  interval: number
+  ease_factor: number
+  created_at: string
+}
+
 export type ReviewGrade = 0 | 1 | 2 | 3 // 忘了 / 模糊 / 记得 / 很熟
