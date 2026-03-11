@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { BookMarked, Trash2, ChevronRight, Loader2, Download } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { BookMarked, Trash2, ChevronRight, Loader2, Download, ExternalLink } from 'lucide-react'
 import { getWords, deleteWord, getGrammars, deleteGrammar } from '../lib/db'
 import type { Word, WordInSentence, SavedGrammar } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
@@ -8,6 +9,7 @@ import { isAudioCached, fetchTTS, storeBlob } from '../lib/audioCache'
 type Tab = 'words' | 'grammar'
 
 export default function VocabPage() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('words')
   const [words, setWords] = useState<Word[]>([])
   const [grammars, setGrammars] = useState<SavedGrammar[]>([])
@@ -152,7 +154,17 @@ export default function VocabPage() {
                         </div>
                         <div className="text-sm text-gray-600 mt-0.5 truncate">{word.meaning}</div>
                         {word.article_title && (
-                          <div className="text-xs text-gray-300 mt-0.5 truncate">来自：{word.article_title}</div>
+                          <div className="text-xs text-gray-300 mt-0.5 truncate flex items-center gap-1">
+                            来自：{word.article_title}
+                            {word.article_id && (
+                              <button
+                                onClick={e => { e.stopPropagation(); navigate(`/article/${word.article_id}${word.sentence_id ? `?sentence=${word.sentence_id}` : ''}`) }}
+                                className="text-gray-300 hover:text-red-400 shrink-0"
+                              >
+                                <ExternalLink size={11} />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                       <ChevronRight size={16} className="text-gray-300 shrink-0" />
@@ -197,7 +209,17 @@ export default function VocabPage() {
                       <div className="text-sm text-gray-700 mt-0.5">{g.meaning}</div>
                       {g.usage && <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{g.usage}</div>}
                       {g.article_title && (
-                        <div className="text-xs text-gray-300 mt-0.5 truncate">来自：{g.article_title}</div>
+                        <div className="text-xs text-gray-300 mt-0.5 truncate flex items-center gap-1">
+                          来自：{g.article_title}
+                          {g.article_id && (
+                            <button
+                              onClick={e => { e.stopPropagation(); navigate(`/article/${g.article_id}${g.sentence_id ? `?sentence=${g.sentence_id}` : ''}`) }}
+                              className="text-gray-300 hover:text-red-400 shrink-0"
+                            >
+                              <ExternalLink size={11} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     <button onClick={() => setDeleteId(g.id)} className="p-1.5 text-gray-300 hover:text-red-400 shrink-0">

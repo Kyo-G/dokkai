@@ -9,6 +9,7 @@ import { useSpeech } from '../hooks/useSpeech'
 interface Props {
   wordInfo: WordInSentence
   articleId: string | null
+  sentenceId?: string | null
   existingWord?: Word | null
   onClose: () => void
 }
@@ -21,7 +22,7 @@ function setLocalCache(word: string, details: WordDetails) {
   try { localStorage.setItem(localCacheKey(word), JSON.stringify(details)) } catch {}
 }
 
-export default function WordDetailSheet({ wordInfo, articleId, existingWord, onClose }: Props) {
+export default function WordDetailSheet({ wordInfo, articleId, sentenceId, existingWord, onClose }: Props) {
   const { settings } = useSettings()
   const { speak, stop, speaking } = useSpeech()
   const [details, setDetails] = useState<WordDetails | null>(
@@ -62,7 +63,7 @@ export default function WordDetailSheet({ wordInfo, articleId, existingWord, onC
   async function handleAddToVocab() {
     setAdding(true)
     try {
-      const w = await addWord(wordInfo.word, wordInfo.reading, wordInfo.pos, wordInfo.meaning, articleId)
+      const w = await addWord(wordInfo.word, wordInfo.reading, wordInfo.pos, wordInfo.meaning, articleId, sentenceId ?? null)
       if (details) {
         await saveWordDetails(w.id, details)
       }

@@ -68,7 +68,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
     const key = g.pattern
     setSavingGrammar(key)
     try {
-      await addGrammar(g.pattern, g.meaning, g.usage, g.jlpt || '', articleId)
+      await addGrammar(g.pattern, g.meaning, g.usage, g.jlpt || '', articleId, sentence.id)
       setSavedGrammars(prev => new Set(prev).add(key))
     } catch (e) {
       if (e instanceof Error && e.message.includes('已在收藏')) {
@@ -202,6 +202,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
         <WordDetailSheet
           wordInfo={selectedWord}
           articleId={articleId}
+          sentenceId={sentence.id}
           onClose={() => setSelectedWord(null)}
         />
       )}

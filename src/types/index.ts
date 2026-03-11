@@ -61,6 +61,7 @@ export interface Word {
   pos: string
   meaning: string
   article_id: string | null
+  sentence_id: string | null
   article_title?: string
   details_cache: WordDetails | null
   is_detailed: boolean
@@ -97,6 +98,7 @@ export interface SavedGrammar {
   usage: string
   jlpt: string
   article_id: string | null
+  sentence_id: string | null
   article_title?: string
   created_at: string
 }

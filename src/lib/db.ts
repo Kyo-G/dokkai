@@ -119,7 +119,8 @@ export async function addWord(
   reading: string,
   pos: string,
   meaning: string,
-  articleId: string | null
+  articleId: string | null,
+  sentenceId: string | null = null
 ): Promise<Word> {
   // Check if already exists
   const { data: existing } = await supabase
@@ -132,7 +133,7 @@ export async function addWord(
 
   const { data, error } = await supabase
     .from('words')
-    .insert({ word, reading, pos, meaning, article_id: articleId, is_detailed: false })
+    .insert({ word, reading, pos, meaning, article_id: articleId, sentence_id: sentenceId, is_detailed: false })
     .select()
     .single()
   if (error) throw error
@@ -187,7 +188,8 @@ export async function addGrammar(
   meaning: string,
   usage: string,
   jlpt: string,
-  articleId: string | null
+  articleId: string | null,
+  sentenceId: string | null = null
 ): Promise<SavedGrammar> {
   const { data: existing } = await supabase
     .from('grammar_points')
@@ -199,7 +201,7 @@ export async function addGrammar(
 
   const { data, error } = await supabase
     .from('grammar_points')
-    .insert({ pattern, meaning, usage, jlpt, article_id: articleId })
+    .insert({ pattern, meaning, usage, jlpt, article_id: articleId, sentence_id: sentenceId })
     .select()
     .single()
   if (error) throw error
