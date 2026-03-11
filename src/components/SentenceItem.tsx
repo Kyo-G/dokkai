@@ -212,18 +212,22 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                           </div>
                           <div className="text-gray-600 text-sm mt-0.5">{w.meaning}</div>
                         </button>
-                        <button
-                          onClick={() => !wordSaved && handleQuickSaveWord(w)}
-                          disabled={wordSaving}
-                          className="shrink-0 mt-0.5"
-                        >
-                          {wordSaving
-                            ? <Loader2 size={15} className="animate-spin text-gray-300" />
-                            : wordSaved
-                              ? <Check size={15} className="text-green-500" />
-                              : <BookmarkPlus size={15} className="text-gray-300" />
-                          }
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                          <button onClick={() => speak(w.word)} className="p-1 text-gray-300 active:text-gray-500">
+                            <Volume2 size={15} />
+                          </button>
+                          <button
+                            onClick={() => !wordSaved && handleQuickSaveWord(w)}
+                            disabled={wordSaving}
+                          >
+                            {wordSaving
+                              ? <Loader2 size={15} className="animate-spin text-gray-300" />
+                              : wordSaved
+                                ? <Check size={15} className="text-green-500" />
+                                : <BookmarkPlus size={15} className="text-gray-300" />
+                            }
+                          </button>
+                        </div>
                       </div>
                     )
                   })}
