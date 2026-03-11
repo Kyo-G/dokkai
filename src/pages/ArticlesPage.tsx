@@ -92,7 +92,7 @@ export default function ArticlesPage() {
         <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setShowImport(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative bg-white rounded-t-2xl flex flex-col max-h-[92dvh]"
+            className="relative bg-white rounded-t-2xl flex flex-col max-h-[85dvh]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-center pt-2 pb-1">
@@ -101,7 +101,7 @@ export default function ArticlesPage() {
             <div className="px-5 py-3 border-b border-gray-100">
               <h2 className="text-base font-bold text-gray-900">导入新文章</h2>
             </div>
-            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+            <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4 space-y-4">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">标题（选填）</label>
                 <input
@@ -135,7 +135,7 @@ export default function ArticlesPage() {
                   value={content}
                   onChange={e => setContent(e.target.value)}
                   placeholder="粘贴日语文章内容…"
-                  rows={10}
+                  rows={7}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-jp
                     focus:outline-none focus:border-red-400 resize-none leading-relaxed"
                 />
