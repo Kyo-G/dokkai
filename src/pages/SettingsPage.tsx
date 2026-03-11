@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Eye, EyeOff, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { useSettings } from '../hooks/useSettings'
 import { testApiKey } from '../lib/ai'
@@ -21,6 +21,15 @@ export default function SettingsPage() {
 
   const keyField = `${settings.provider}Key` as 'claudeKey' | 'openaiKey' | 'geminiKey' | 'deepseekKey'
   const activeProvider = PROVIDERS.find(p => p.value === settings.provider)!
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [showVoices, setShowVoices] = useState(false)
+
+  useEffect(() => {
+    function load() { setVoices(window.speechSynthesis.getVoices()) }
+    load()
+    window.speechSynthesis.addEventListener('voiceschanged', load)
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
+  }, [])
 
   async function handleTest() {
     setTestStatus('loading')
@@ -98,6 +107,33 @@ export default function SettingsPage() {
         </button>
         {testStatus === 'error' && testError && (
           <p className="text-red-500 text-xs text-center">{testError}</p>
+        )}
+      </div>
+      {/* TTS diagnostic */}
+      <div className="space-y-2">
+        <div className="text-xs text-gray-400 uppercase tracking-wide">语音诊断</div>
+        <button
+          onClick={() => setShowVoices(v => !v)}
+          className="w-full py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600"
+        >
+          {showVoices ? '收起' : `查看设备已安装的语音（共 ${voices.length} 个）`}
+        </button>
+        {showVoices && (
+          <div className="bg-gray-50 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
+            {voices.length === 0
+              ? <p className="text-xs text-gray-400">暂未检测到语音，请稍后再试</p>
+              : voices.map((v, i) => (
+                <div key={i} className={`text-xs px-2 py-1 rounded ${v.lang.startsWith('ja') ? 'bg-green-100 text-green-800 font-medium' : 'text-gray-500'}`}>
+                  {v.name} — {v.lang}
+                </div>
+              ))
+            }
+          </div>
+        )}
+        {voices.length > 0 && !voices.some(v => v.lang.startsWith('ja')) && (
+          <p className="text-xs text-amber-600 bg-amber-50 rounded-xl px-3 py-2">
+            未检测到日语语音包。请在手机「设置 → 语言 → 文字转语音 → 安装语音数据」中下载日语。
+          </p>
         )}
       </div>
     </div>
