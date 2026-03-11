@@ -112,12 +112,26 @@ export default function SettingsPage() {
       {/* TTS diagnostic */}
       <div className="space-y-2">
         <div className="text-xs text-gray-400 uppercase tracking-wide">语音诊断</div>
-        <button
-          onClick={() => setShowVoices(v => !v)}
-          className="w-full py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600"
-        >
-          {showVoices ? '收起' : `查看设备已安装的语音（共 ${voices.length} 个）`}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowVoices(v => !v)}
+            className="flex-1 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600"
+          >
+            {showVoices ? '收起' : `已安装语音（共 ${voices.length} 个）`}
+          </button>
+          <button
+            onClick={() => {
+              // Wake up speech synthesis engine, then reload voices
+              const u = new SpeechSynthesisUtterance('')
+              window.speechSynthesis.speak(u)
+              window.speechSynthesis.cancel()
+              setTimeout(() => setVoices(window.speechSynthesis.getVoices()), 300)
+            }}
+            className="px-3 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600"
+          >
+            刷新
+          </button>
+        </div>
         {showVoices && (
           <div className="bg-gray-50 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
             {voices.length === 0
