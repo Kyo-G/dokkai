@@ -76,9 +76,9 @@ export default function ReviewPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
         <PartyPopper size={56} className="text-yellow-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 mb-2">今日复习完成！</h2>
-        <p className="text-gray-500 text-sm">共复习了 {done} 项</p>
-        <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600">再次检查</button>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">今日复习完成！</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">共复习了 {done} 项</p>
+        <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm text-gray-600 dark:text-gray-400">再次检查</button>
       </div>
     )
   }
@@ -87,9 +87,9 @@ export default function ReviewPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
         <Check size={56} className="text-green-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 mb-2">今天没有待复习内容</h2>
-        <p className="text-gray-500 text-sm">先去阅读文章，收藏单词和语法吧</p>
-        <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">今天没有待复习内容</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">先去阅读文章，收藏单词和语法吧</p>
+        <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm text-gray-600 dark:text-gray-400">
           <RotateCcw size={16} className="inline mr-1" />刷新
         </button>
       </div>
@@ -110,10 +110,10 @@ export default function ReviewPage() {
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold text-gray-900">每日复习</h1>
-          <span className="text-sm text-gray-400">{done} / {total}</span>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">每日复习</h1>
+          <span className="text-sm text-gray-400 dark:text-gray-500">{done} / {total}</span>
         </div>
-        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-gray-200 dark:bg-[#2a2a2a] rounded-full overflow-hidden">
           <div className="h-full bg-red-700 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </div>
@@ -123,11 +123,11 @@ export default function ReviewPage() {
           <div className="flex-1 flex flex-col justify-center">
             <button
               onClick={() => !flipped && setFlipped(true)}
-              className="w-full bg-white border-2 border-gray-200 rounded-3xl p-8 text-center shadow-sm"
+              className="w-full bg-white dark:bg-[#1e1e1e] border-2 border-gray-200 dark:border-[#333] rounded-3xl p-8 text-center shadow-sm"
             >
               {/* Type badge */}
               <div className="mb-4">
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${isWord ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${isWord ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'}`}>
                   {isWord ? '单词' : '语法'}
                 </span>
               </div>
@@ -135,41 +135,41 @@ export default function ReviewPage() {
               {/* Front: key item */}
               {isWord && (
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <div className="font-jp text-4xl font-bold text-gray-900" lang="ja">
+                  <div className="font-jp text-4xl font-bold text-gray-900 dark:text-gray-100" lang="ja">
                     {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
                   </div>
-                  <button onClick={e => { e.stopPropagation(); speaking ? stop() : speak((current as Extract<AnyReviewItem, { type: 'word' }>).word.word) }} className="text-gray-400 active:text-red-600">
+                  <button onClick={e => { e.stopPropagation(); speaking ? stop() : speak((current as Extract<AnyReviewItem, { type: 'word' }>).word.word) }} className="text-gray-400 dark:text-gray-500 active:text-red-600">
                     {speaking ? <Square size={16} fill="currentColor" /> : <Volume2 size={20} />}
                   </button>
                 </div>
               )}
               {isGrammar && (
-                <div className="font-jp text-3xl font-bold text-amber-900 mb-2" lang="ja">
+                <div className="font-jp text-3xl font-bold text-amber-900 dark:text-amber-300 mb-2" lang="ja">
                   {(current as Extract<AnyReviewItem, { type: 'grammar' }>).grammar.pattern}
                 </div>
               )}
 
               {!flipped && (
-                <div className="text-sm text-gray-400 mt-4">点击翻转查看答案</div>
+                <div className="text-sm text-gray-400 dark:text-gray-500 mt-4">点击翻转查看答案</div>
               )}
 
               {flipped && (
                 <div className="mt-4 space-y-3 text-left">
-                  <div className="h-px bg-gray-100" />
+                  <div className="h-px bg-gray-100 dark:bg-[#2a2a2a]" />
 
                   {isWord && (() => {
                     const w = (current as Extract<AnyReviewItem, { type: 'word' }>).word
                     return (
                       <>
                         <div className="text-center">
-                          <div className="text-xl text-gray-600 font-jp" lang="ja">{w.reading}</div>
-                          <div className="text-xs text-gray-400 mt-1">{w.pos}</div>
+                          <div className="text-xl text-gray-600 dark:text-gray-400 font-jp" lang="ja">{w.reading}</div>
+                          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{w.pos}</div>
                         </div>
-                        <div className="text-center text-lg text-gray-900 font-medium">{w.meaning}</div>
+                        <div className="text-center text-lg text-gray-900 dark:text-gray-100 font-medium">{w.meaning}</div>
                         {w.details_cache?.examples?.[0] && (
-                          <div className="bg-gray-50 rounded-xl p-3 mt-2">
-                            <div className="font-jp text-sm text-gray-700" lang="ja">{w.details_cache.examples[0].japanese}</div>
-                            <div className="text-xs text-gray-500 mt-1">{w.details_cache.examples[0].chinese}</div>
+                          <div className="bg-gray-50 dark:bg-[#252525] rounded-xl p-3 mt-2">
+                            <div className="font-jp text-sm text-gray-700 dark:text-gray-300" lang="ja">{w.details_cache.examples[0].japanese}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{w.details_cache.examples[0].chinese}</div>
                           </div>
                         )}
                         <button onClick={e => { e.stopPropagation(); setShowDetail(true) }} className="text-xs text-red-700 underline w-full text-center mt-1">
@@ -183,13 +183,13 @@ export default function ReviewPage() {
                     const g = (current as Extract<AnyReviewItem, { type: 'grammar' }>).grammar
                     return (
                       <>
-                        <div className="text-center text-lg text-gray-900 font-medium">{g.meaning}</div>
+                        <div className="text-center text-lg text-gray-900 dark:text-gray-100 font-medium">{g.meaning}</div>
                         {g.usage && (
-                          <div className="bg-amber-50 rounded-xl p-3 text-sm text-gray-700 text-left">{g.usage}</div>
+                          <div className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3 text-sm text-gray-700 dark:text-gray-300 text-left">{g.usage}</div>
                         )}
                         {g.jlpt && (
                           <div className="text-center">
-                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{g.jlpt}</span>
+                            <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">{g.jlpt}</span>
                           </div>
                         )}
                       </>

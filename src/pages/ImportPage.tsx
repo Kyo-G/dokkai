@@ -26,13 +26,13 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="flex flex-col h-dvh bg-[#f8f7f4]">
+    <div className="flex flex-col h-dvh bg-[#f8f7f4] dark:bg-[#111]">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-[#f8f7f4] border-b border-gray-100">
-        <button onClick={() => navigate(-1)} className="p-1 text-gray-500">
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#f8f7f4] dark:bg-[#111] border-b border-gray-100 dark:border-[#2a2a2a]">
+        <button onClick={() => navigate(-1)} className="p-1 text-gray-500 dark:text-gray-400">
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-base font-bold text-gray-900 flex-1">导入新文章</h1>
+        <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 flex-1">导入新文章</h1>
         <button
           onClick={handleSave}
           disabled={!content.trim() || saving}
@@ -46,17 +46,17 @@ export default function ImportPage() {
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">标题（选填）</label>
+          <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">标题（选填）</label>
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="文章标题"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-red-400"
+            className="w-full px-3 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-red-400"
           />
         </div>
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">难度（选填）</label>
+          <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">难度（选填）</label>
           <div className="flex gap-2 flex-wrap">
             {LEVELS.map(l => (
               <button
@@ -64,8 +64,8 @@ export default function ImportPage() {
                 onClick={() => setLevel(l)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
                   ${level === l
-                    ? 'border-red-700 bg-red-50 text-red-700'
-                    : 'border-gray-200 bg-white text-gray-600'}`}
+                    ? 'border-red-700 bg-red-50 dark:bg-red-950/30 text-red-700'
+                    : 'border-gray-200 dark:border-[#333] bg-white dark:bg-[#1e1e1e] text-gray-600 dark:text-gray-400'}`}
               >
                 {l || '不指定'}
               </button>
@@ -73,13 +73,13 @@ export default function ImportPage() {
           </div>
         </div>
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">日语文本 *</label>
+          <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">日语文本 *</label>
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
             placeholder="粘贴日语文章内容…"
             rows={12}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-jp bg-white
+            className="w-full px-3 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm font-jp bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600
               focus:outline-none focus:border-red-400 resize-none leading-relaxed"
           />
         </div>

@@ -103,14 +103,14 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
 
   return (
     <>
-      <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white">
+      <div className="border border-gray-200 dark:border-[#333] rounded-2xl overflow-hidden bg-white dark:bg-[#1e1e1e]">
         {/* Sentence row */}
         <div className="px-4 py-4 flex items-start gap-3">
           <button onClick={handleExpand} className="flex-1 text-left flex items-start gap-3">
-            <div className="font-jp text-base leading-relaxed text-gray-900 flex-1" lang="ja">
+            <div className="font-jp text-base leading-relaxed text-gray-900 dark:text-gray-100 flex-1" lang="ja">
               {sentence.content}
             </div>
-            <div className="mt-1 shrink-0 text-gray-400">
+            <div className="mt-1 shrink-0 text-gray-400 dark:text-gray-500">
               {loading
                 ? <Loader2 size={18} className="animate-spin" />
                 : expanded
@@ -121,7 +121,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
           </button>
           <button
             onClick={e => { e.stopPropagation(); speaking ? stop() : speak(sentence.content) }}
-            className="mt-1 shrink-0 text-gray-400 active:text-red-600"
+            className="mt-1 shrink-0 text-gray-400 dark:text-gray-500 active:text-red-600"
           >
             {speaking ? <Square size={16} fill="currentColor" /> : <Volume2 size={18} />}
           </button>
@@ -134,11 +134,11 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
 
         {/* Analysis panel */}
         {expanded && analysis && (
-          <div className="border-t border-gray-100 px-4 py-4 space-y-5 animate-fade-in-down">
+          <div className="border-t border-gray-100 dark:border-[#2a2a2a] px-4 py-4 space-y-5 animate-fade-in-down">
             {/* Structure */}
             {analysis.structure?.length > 0 && (
               <div>
-                <div className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">句子结构</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">句子结构</div>
                 <div className="flex flex-wrap gap-1.5">
                   {analysis.structure.map((part, i) => (
                     <span
@@ -156,22 +156,22 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
             {/* Grammar */}
             {analysis.grammar?.length > 0 && (
               <div>
-                <div className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">语法点</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">语法点</div>
                 <div className="space-y-2">
                   {analysis.grammar.map((g, i) => {
                     const saved = savedGrammars.has(g.pattern)
                     const saving = savingGrammar === g.pattern
                     return (
-                      <div key={i} className="bg-amber-50 active:bg-amber-100 rounded-xl p-3 cursor-pointer" onClick={() => setSelectedGrammar(g)}>
+                      <div key={i} className="bg-amber-50 dark:bg-amber-950/30 active:bg-amber-100 dark:active:bg-amber-900/40 rounded-xl p-3 cursor-pointer" onClick={() => setSelectedGrammar(g)}>
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-jp font-bold text-amber-900" lang="ja">{g.pattern}</span>
+                            <span className="font-jp font-bold text-amber-900 dark:text-amber-300" lang="ja">{g.pattern}</span>
                             {g.jlpt && (
                               <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">
                                 {g.jlpt}
                               </span>
                             )}
-                            <span className="text-amber-700 text-sm">— {g.meaning}</span>
+                            <span className="text-amber-700 dark:text-amber-400 text-sm">— {g.meaning}</span>
                           </div>
                           <button
                             onClick={e => { e.stopPropagation(); !saved && handleSaveGrammar(g) }}
@@ -186,7 +186,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                             }
                           </button>
                         </div>
-                        <div className="text-gray-600 text-sm">{g.usage}</div>
+                        <div className="text-gray-600 dark:text-gray-400 text-sm">{g.usage}</div>
                       </div>
                     )
                   })}
@@ -197,23 +197,23 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
             {/* Words */}
             {analysis.words?.length > 0 && (
               <div>
-                <div className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">单词列表</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">单词列表</div>
                 <div className="space-y-1">
                   {analysis.words.map((w, i) => {
                     const wordSaved = savedWords.has(w.word)
                     const wordSaving = savingWord === w.word
                     return (
-                      <div key={i} className="bg-gray-50 active:bg-gray-100 rounded-xl p-3 flex items-start justify-between gap-2">
+                      <div key={i} className="bg-gray-50 dark:bg-[#252525] active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2">
                         <button onClick={() => setSelectedWord(w)} className="flex-1 text-left">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-jp font-bold text-gray-900" lang="ja">{w.word}</span>
-                            <span className="text-gray-400 text-sm" lang="ja">{w.reading}</span>
-                            <span className="text-xs text-gray-400 bg-gray-200 rounded px-1.5 py-0.5">{w.pos}</span>
+                            <span className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">{w.word}</span>
+                            <span className="text-gray-400 dark:text-gray-500 text-sm" lang="ja">{w.reading}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
                           </div>
-                          <div className="text-gray-600 text-sm mt-0.5">{w.meaning}</div>
+                          <div className="text-gray-600 dark:text-gray-400 text-sm mt-0.5">{w.meaning}</div>
                         </button>
                         <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                          <button onClick={() => speak(w.word)} className="p-1 text-gray-300 active:text-gray-500">
+                          <button onClick={() => speak(w.word)} className="p-1 text-gray-300 dark:text-gray-600 active:text-gray-500">
                             <Volume2 size={15} />
                           </button>
                           <button

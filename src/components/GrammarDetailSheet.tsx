@@ -57,26 +57,26 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="relative bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up"
+        className="relative bg-white dark:bg-[#1e1e1e] rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-2 pb-1">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between px-5 py-3 border-b border-gray-100">
+        <div className="flex items-start justify-between px-5 py-3 border-b border-gray-100 dark:border-[#2a2a2a]">
           <div>
-            <div className="font-jp text-2xl font-bold text-amber-900" lang="ja">{grammar.pattern}</div>
+            <div className="font-jp text-2xl font-bold text-amber-900 dark:text-amber-300" lang="ja">{grammar.pattern}</div>
             <div className="flex items-center gap-2 mt-0.5">
               {grammar.jlpt && (
-                <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">{grammar.jlpt}</span>
+                <span className="text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium">{grammar.jlpt}</span>
               )}
-              <span className="text-sm text-gray-500">{grammar.meaning}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{grammar.meaning}</span>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 text-gray-400 mt-1">
+          <button onClick={onClose} className="p-1 text-gray-400 dark:text-gray-500 mt-1">
             <X size={20} />
           </button>
         </div>
@@ -84,13 +84,13 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
         {/* Content */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
           {loading && (
-            <div className="flex items-center gap-2 text-gray-500 py-8 justify-center">
+            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-8 justify-center">
               <Loader2 size={20} className="animate-spin" />
               <span>正在获取详情…</span>
             </div>
           )}
           {error && (
-            <div className="text-red-600 text-sm bg-red-50 rounded-lg p-3">
+            <div className="text-red-600 text-sm bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
               {error}
               <button onClick={fetchDetails} className="ml-2 underline">重试</button>
             </div>
@@ -98,23 +98,23 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
           {details && (
             <>
               <div>
-                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">用法</div>
-                <div className="text-gray-700 text-sm leading-relaxed">{details.usage}</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">用法</div>
+                <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{details.usage}</div>
               </div>
               {details.nuance && (
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">语感</div>
-                  <div className="text-gray-700 text-sm leading-relaxed">{details.nuance}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">语感</div>
+                  <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{details.nuance}</div>
                 </div>
               )}
               {details.examples?.length > 0 && (
                 <div>
-                  <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">例句</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">例句</div>
                   <div className="space-y-3">
                     {details.examples.map((ex, i) => (
-                      <div key={i} className="bg-amber-50 rounded-xl p-3">
-                        <div className="font-jp text-gray-900 leading-relaxed" lang="ja">{ex.japanese}</div>
-                        <div className="text-gray-500 text-sm mt-1">{ex.chinese}</div>
+                      <div key={i} className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3">
+                        <div className="font-jp text-gray-900 dark:text-gray-100 leading-relaxed" lang="ja">{ex.japanese}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">{ex.chinese}</div>
                       </div>
                     ))}
                   </div>

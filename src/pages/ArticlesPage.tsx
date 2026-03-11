@@ -53,8 +53,8 @@ export default function ArticlesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">読解</h1>
-          <p className="text-xs text-gray-400 mt-0.5">日語精讀</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">読解</h1>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">日語精讀</p>
         </div>
         <button
           onClick={() => navigate('/import')}
@@ -81,12 +81,12 @@ export default function ArticlesPage() {
           {articles.map(article => (
             <div key={article.id} className="relative">
               {deleteId === article.id ? (
-                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
+                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
                   <span className="text-sm text-red-700">确认删除「{article.title}」？</span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setDeleteId(null)}
-                      className="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg"
+                      className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg"
                     >取消</button>
                     <button
                       onClick={() => handleDelete(article.id)}
@@ -97,31 +97,31 @@ export default function ArticlesPage() {
               ) : (
                 <Link
                   to={`/article/${article.id}`}
-                  className="block bg-white border border-gray-200 rounded-2xl p-4"
+                  className="block bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] rounded-2xl p-4"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900 truncate">{article.title}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{article.title}</span>
                         {article.level && (
                           <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
                             {article.level}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 font-jp leading-relaxed line-clamp-2">
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-jp leading-relaxed line-clamp-2">
                         {article.content.slice(0, 80)}…
                       </p>
-                      <p className="text-xs text-gray-300 mt-2">{formatDate(article.created_at)}</p>
+                      <p className="text-xs text-gray-300 dark:text-gray-600 mt-2">{formatDate(article.created_at)}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={e => { e.preventDefault(); setDeleteId(article.id) }}
-                        className="p-1.5 text-gray-300 hover:text-red-400"
+                        className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400"
                       >
                         <Trash2 size={15} />
                       </button>
-                      <ChevronRight size={18} className="text-gray-300" />
+                      <ChevronRight size={18} className="text-gray-300 dark:text-gray-600" />
                     </div>
                   </div>
                 </Link>

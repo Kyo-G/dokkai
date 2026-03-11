@@ -85,21 +85,21 @@ export default function ArticleReadPage() {
   return (
     <div className="max-w-lg mx-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 z-10 px-4 py-3">
+      <div className="sticky top-0 bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-100 dark:border-[#2a2a2a] z-10 px-4 py-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-gray-400">
+          <button onClick={() => navigate(-1)} className="text-gray-400 dark:text-gray-500">
             <ArrowLeft size={22} />
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-gray-900 truncate">{article.title}</h1>
+              <h1 className="font-bold text-gray-900 dark:text-gray-100 truncate">{article.title}</h1>
               {article.level && (
                 <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
                   {article.level}
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">点击句子展开分析</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">点击句子展开分析</p>
           </div>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function ArticleReadPage() {
       {/* Sentences */}
       <div className="px-4 py-4 space-y-3 pb-24">
         {sentences.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-8">暂无句子数据</p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">暂无句子数据</p>
         ) : (
           sentences.map(sentence => (
             <div

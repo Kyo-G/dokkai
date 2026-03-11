@@ -16,7 +16,7 @@ export default function BottomNav({ dueCount = 0 }: Props) {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+    <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1e1e1e] border-t border-gray-200 dark:border-[#333] z-50"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="flex max-w-lg mx-auto">
         {tabs.map(({ path, icon: Icon, label }) => {
@@ -26,7 +26,7 @@ export default function BottomNav({ dueCount = 0 }: Props) {
               key={path}
               to={path}
               className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors
-                ${active ? 'text-red-700' : 'text-gray-400'}`}
+                ${active ? 'text-red-700' : 'text-gray-400 dark:text-gray-500'}`}
             >
               <div className="relative">
                 <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />

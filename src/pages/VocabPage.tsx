@@ -88,14 +88,14 @@ export default function VocabPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">收藏</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{words.length} 个单词 · {grammars.length} 个语法</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">收藏</h1>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{words.length} 个单词 · {grammars.length} 个语法</p>
         </div>
         {tab === 'words' && words.length > 0 && (
           <button
             onClick={handleCacheAll}
             disabled={caching}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-[#333] text-sm text-gray-600 dark:text-gray-400 disabled:opacity-50"
           >
             {caching
               ? <><Loader2 size={14} className="animate-spin" />{cacheProgress ? `${cacheProgress.done}/${cacheProgress.total}` : '…'}</>
@@ -106,18 +106,18 @@ export default function VocabPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
+      <div className="flex bg-gray-100 dark:bg-[#2a2a2a] rounded-xl p-1 mb-4">
         <button
           onClick={() => setTab('words')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors
-            ${tab === 'words' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+            ${tab === 'words' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
         >
           单词
         </button>
         <button
           onClick={() => setTab('grammar')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors
-            ${tab === 'grammar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+            ${tab === 'grammar' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
         >
           语法
         </button>
@@ -139,30 +139,30 @@ export default function VocabPage() {
             {words.map(word => (
               <div key={word.id}>
                 {deleteId === word.id ? (
-                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
                     <span className="text-sm text-red-700">删除「{word.word}」？</span>
                     <div className="flex gap-2">
-                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg">取消</button>
+                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg">取消</button>
                       <button onClick={() => handleDeleteWord(word.id)} className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg">删除</button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] rounded-2xl px-4 py-3 flex items-center gap-3">
                     <button onClick={() => setSelectedWord(word)} className="flex-1 text-left flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-jp font-medium text-gray-900" lang="ja">{word.word}</span>
-                          <span className="text-gray-400 text-sm" lang="ja">{word.reading}</span>
-                          <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">{word.pos}</span>
+                          <span className="font-jp font-medium text-gray-900 dark:text-gray-100" lang="ja">{word.word}</span>
+                          <span className="text-gray-400 dark:text-gray-500 text-sm" lang="ja">{word.reading}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#2a2a2a] rounded px-1.5 py-0.5 shrink-0">{word.pos}</span>
                         </div>
-                        <div className="text-sm text-gray-600 mt-0.5 truncate">{word.meaning}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{word.meaning}</div>
                         {word.article_title && (
-                          <div className="text-xs text-gray-300 mt-0.5 truncate flex items-center gap-1">
+                          <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
                             来自：{word.article_title}
                             {word.article_id && (
                               <button
                                 onClick={e => { e.stopPropagation(); navigate(`/article/${word.article_id}${word.sentence_id ? `?sentence=${word.sentence_id}` : ''}`) }}
-                                className="text-gray-300 hover:text-red-400 shrink-0"
+                                className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
                               >
                                 <ExternalLink size={11} />
                               </button>
@@ -170,9 +170,9 @@ export default function VocabPage() {
                           </div>
                         )}
                       </div>
-                      <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                      <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
                     </button>
-                    <button onClick={() => setDeleteId(word.id)} className="p-1.5 text-gray-300 hover:text-red-400 shrink-0">
+                    <button onClick={() => setDeleteId(word.id)} className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0">
                       <Trash2 size={15} />
                     </button>
                   </div>
@@ -193,32 +193,32 @@ export default function VocabPage() {
             {grammars.map(g => (
               <div key={g.id}>
                 {deleteId === g.id ? (
-                  <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
                     <span className="text-sm text-red-700">删除「{g.pattern}」？</span>
                     <div className="flex gap-2">
-                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg">取消</button>
+                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg">取消</button>
                       <button onClick={() => handleDeleteGrammar(g.id)} className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg">删除</button>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] rounded-2xl px-4 py-3 flex items-center gap-3">
                     <button onClick={() => setSelectedGrammar(g)} className="flex-1 text-left flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-jp font-medium text-amber-900" lang="ja">{g.pattern}</span>
+                          <span className="font-jp font-medium text-amber-900 dark:text-amber-300" lang="ja">{g.pattern}</span>
                           {g.jlpt && (
-                            <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium shrink-0">{g.jlpt}</span>
+                            <span className="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium shrink-0">{g.jlpt}</span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-700 mt-0.5">{g.meaning}</div>
-                        {g.usage && <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{g.usage}</div>}
+                        <div className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{g.meaning}</div>
+                        {g.usage && <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1">{g.usage}</div>}
                         {g.article_title && (
-                          <div className="text-xs text-gray-300 mt-0.5 truncate flex items-center gap-1">
+                          <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
                             来自：{g.article_title}
                             {g.article_id && (
                               <button
                                 onClick={e => { e.stopPropagation(); navigate(`/article/${g.article_id}${g.sentence_id ? `?sentence=${g.sentence_id}` : ''}`) }}
-                                className="text-gray-300 hover:text-red-400 shrink-0"
+                                className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
                               >
                                 <ExternalLink size={11} />
                               </button>
@@ -226,9 +226,9 @@ export default function VocabPage() {
                           </div>
                         )}
                       </div>
-                      <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                      <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
                     </button>
-                    <button onClick={() => setDeleteId(g.id)} className="p-1.5 text-gray-300 hover:text-red-400 shrink-0">
+                    <button onClick={() => setDeleteId(g.id)} className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0">
                       <Trash2 size={15} />
                     </button>
                   </div>

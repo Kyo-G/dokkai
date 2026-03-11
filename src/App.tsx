@@ -8,10 +8,12 @@ import VocabPage from './pages/VocabPage'
 import ReviewPage from './pages/ReviewPage'
 import SettingsPage from './pages/SettingsPage'
 import { getDueCount } from './lib/db'
+import { useDarkMode } from './hooks/useDarkMode'
 
 function AppShell() {
   const location = useLocation()
   const [dueCount, setDueCount] = useState(0)
+  useDarkMode() // initializes dark class on <html> based on stored preference
   const hideNav = location.pathname.startsWith('/article/') || location.pathname === '/import'
 
   useEffect(() => {
@@ -19,7 +21,7 @@ function AppShell() {
   }, [location.pathname])
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4]">
+    <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#111]">
       <Routes>
         <Route path="/" element={<ArticlesPage />} />
         <Route path="/import" element={<ImportPage />} />
