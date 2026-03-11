@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 function pickJapaneseVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices()
