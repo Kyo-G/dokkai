@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { X, BookmarkPlus, Loader2, Check } from 'lucide-react'
+import { X, BookmarkPlus, Loader2, Check, Volume2, Square } from 'lucide-react'
 import type { Word, WordDetails, WordInSentence } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getWordDetails } from '../lib/ai'
 import { addWord, saveWordDetails } from '../lib/db'
+import { useSpeech } from '../hooks/useSpeech'
 
 interface Props {
   wordInfo: WordInSentence
@@ -14,6 +15,7 @@ interface Props {
 
 export default function WordDetailSheet({ wordInfo, articleId, existingWord, onClose }: Props) {
   const { settings } = useSettings()
+  const { speak, stop, speaking } = useSpeech()
   const [details, setDetails] = useState<WordDetails | null>(existingWord?.details_cache || null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -77,9 +79,17 @@ export default function WordDetailSheet({ wordInfo, articleId, existingWord, onC
 
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-3 border-b border-gray-100">
-          <div>
-            <div className="font-jp text-2xl font-bold text-gray-900" lang="ja">{wordInfo.word}</div>
-            <div className="text-sm text-gray-500 mt-0.5" lang="ja">{wordInfo.reading}</div>
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="font-jp text-2xl font-bold text-gray-900" lang="ja">{wordInfo.word}</div>
+              <div className="text-sm text-gray-500 mt-0.5" lang="ja">{wordInfo.reading} · {wordInfo.pos}</div>
+            </div>
+            <button
+              onClick={() => speaking ? stop() : speak(wordInfo.word)}
+              className="text-gray-400 active:text-red-600 mt-1"
+            >
+              {speaking ? <Square size={16} fill="currentColor" /> : <Volume2 size={20} />}
+            </button>
           </div>
           <button onClick={onClose} className="p-1 text-gray-400 mt-1">
             <X size={20} />

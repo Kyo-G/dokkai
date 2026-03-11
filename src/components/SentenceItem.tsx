@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Check } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Check, Volume2, Square } from 'lucide-react'
 import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint } from '../types'
 import { analyzeSentence } from '../lib/ai'
 import { saveSentenceAnalysis, addGrammar } from '../lib/db'
 import { useSettings } from '../hooks/useSettings'
+import { useSpeech } from '../hooks/useSpeech'
 import WordDetailSheet from './WordDetailSheet'
 
 const ROLE_COLORS: Record<string, string> = {
@@ -36,6 +37,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
   const [error, setError] = useState('')
   const [analysis, setAnalysis] = useState<SentenceAnalysis | null>(sentence.analysis_cache)
   const [selectedWord, setSelectedWord] = useState<WordInSentence | null>(null)
+  const { speak, stop, speaking } = useSpeech()
   const [savedGrammars, setSavedGrammars] = useState<Set<string>>(new Set())
   const [savingGrammar, setSavingGrammar] = useState<string | null>(null)
 
@@ -83,22 +85,27 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
     <>
       <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white">
         {/* Sentence row */}
-        <button
-          onClick={handleExpand}
-          className="w-full text-left px-4 py-4 flex items-start gap-3"
-        >
-          <div className="font-jp text-base leading-relaxed text-gray-900 flex-1" lang="ja">
-            {sentence.content}
-          </div>
-          <div className="mt-1 shrink-0 text-gray-400">
-            {loading
-              ? <Loader2 size={18} className="animate-spin" />
-              : expanded
-                ? <ChevronUp size={18} />
-                : <ChevronDown size={18} />
-            }
-          </div>
-        </button>
+        <div className="px-4 py-4 flex items-start gap-3">
+          <button onClick={handleExpand} className="flex-1 text-left flex items-start gap-3">
+            <div className="font-jp text-base leading-relaxed text-gray-900 flex-1" lang="ja">
+              {sentence.content}
+            </div>
+            <div className="mt-1 shrink-0 text-gray-400">
+              {loading
+                ? <Loader2 size={18} className="animate-spin" />
+                : expanded
+                  ? <ChevronUp size={18} />
+                  : <ChevronDown size={18} />
+              }
+            </div>
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); speaking ? stop() : speak(sentence.content) }}
+            className="mt-1 shrink-0 text-gray-400 active:text-red-600"
+          >
+            {speaking ? <Square size={16} fill="currentColor" /> : <Volume2 size={18} />}
+          </button>
+        </div>
 
         {/* Error */}
         {error && (

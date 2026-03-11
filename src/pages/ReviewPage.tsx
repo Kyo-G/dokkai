@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { RotateCcw, Check, Loader2, PartyPopper } from 'lucide-react'
+import { RotateCcw, Check, Loader2, PartyPopper, Volume2, Square } from 'lucide-react'
 import { getDueReviews, submitReview, submitGrammarReview } from '../lib/db'
 import type { AnyReviewItem } from '../lib/db'
 import type { ReviewGrade } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
 import type { WordInSentence } from '../types'
+import { useSpeech } from '../hooks/useSpeech'
 
 const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string }[] = [
   { grade: 0, label: '忘了', color: 'bg-red-100 text-red-700 border-red-200' },
@@ -21,6 +22,7 @@ export default function ReviewPage() {
   const [done, setDone] = useState(0)
   const [total, setTotal] = useState(0)
   const [showDetail, setShowDetail] = useState(false)
+  const { speak, stop, speaking } = useSpeech()
 
   useEffect(() => { load() }, [])
 
@@ -132,8 +134,13 @@ export default function ReviewPage() {
 
               {/* Front: key item */}
               {isWord && (
-                <div className="font-jp text-4xl font-bold text-gray-900 mb-2" lang="ja">
-                  {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <div className="font-jp text-4xl font-bold text-gray-900" lang="ja">
+                    {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
+                  </div>
+                  <button onClick={e => { e.stopPropagation(); speaking ? stop() : speak((current as Extract<AnyReviewItem, { type: 'word' }>).word.word) }} className="text-gray-400 active:text-red-600">
+                    {speaking ? <Square size={16} fill="currentColor" /> : <Volume2 size={20} />}
+                  </button>
                 </div>
               )}
               {isGrammar && (
