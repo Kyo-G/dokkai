@@ -13,10 +13,20 @@ interface Props {
   onClose: () => void
 }
 
+function localCacheKey(word: string) { return `dokkai_word_${word}` }
+function getLocalCache(word: string): WordDetails | null {
+  try { return JSON.parse(localStorage.getItem(localCacheKey(word)) || 'null') } catch { return null }
+}
+function setLocalCache(word: string, details: WordDetails) {
+  try { localStorage.setItem(localCacheKey(word), JSON.stringify(details)) } catch {}
+}
+
 export default function WordDetailSheet({ wordInfo, articleId, existingWord, onClose }: Props) {
   const { settings } = useSettings()
   const { speak, stop, speaking } = useSpeech()
-  const [details, setDetails] = useState<WordDetails | null>(existingWord?.details_cache || null)
+  const [details, setDetails] = useState<WordDetails | null>(
+    existingWord?.details_cache || getLocalCache(wordInfo.word) || null
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [added, setAdded] = useState(!!existingWord)
@@ -32,14 +42,13 @@ export default function WordDetailSheet({ wordInfo, articleId, existingWord, onC
     setLoading(true)
     setError('')
     try {
-      // If word exists in DB with details, use cache
       if (existingWord?.is_detailed && existingWord.details_cache) {
         setDetails(existingWord.details_cache)
         return
       }
       const d = await getWordDetails(settings, wordInfo.word, wordInfo.reading, wordInfo.pos)
       setDetails(d)
-      // Save to DB if word exists
+      setLocalCache(wordInfo.word, d) // always cache locally
       if (existingWord) {
         await saveWordDetails(existingWord.id, d)
       }
