@@ -132,6 +132,27 @@ async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
   return data.choices[0].message.content
 }
 
+async function callDeepSeek(apiKey: string, prompt: string): Promise<string> {
+  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 2048,
+    }),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error((err as { error?: { message?: string } }).error?.message || `DeepSeek API error: ${response.status}`)
+  }
+  const data = await response.json() as { choices: Array<{ message: { content: string } }> }
+  return data.choices[0].message.content
+}
+
 async function callGemini(apiKey: string, prompt: string): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
   const response = await fetch(url, {
@@ -157,7 +178,7 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
 // ──────────────────────────────────────────────
 
 async function callAI(settings: Settings, prompt: string): Promise<string> {
-  const { provider, claudeKey, openaiKey, geminiKey } = settings
+  const { provider, claudeKey, openaiKey, geminiKey, deepseekKey } = settings
   switch (provider) {
     case 'claude':
       if (!claudeKey) throw new Error('请先在设置页面填入 Claude API Key')
@@ -168,6 +189,9 @@ async function callAI(settings: Settings, prompt: string): Promise<string> {
     case 'gemini':
       if (!geminiKey) throw new Error('请先在设置页面填入 Gemini API Key')
       return callGemini(geminiKey, prompt)
+    case 'deepseek':
+      if (!deepseekKey) throw new Error('请先在设置页面填入 DeepSeek API Key')
+      return callDeepSeek(deepseekKey, prompt)
     default:
       throw new Error('未知的 AI Provider')
   }

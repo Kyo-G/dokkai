@@ -1,4 +1,4 @@
-export type AIProvider = 'claude' | 'openai' | 'gemini'
+export type AIProvider = 'claude' | 'openai' | 'gemini' | 'deepseek'
 
 export type ArticleLevel = 'N5' | 'N4' | 'N3' | 'N2' | 'N1' | ''
 
@@ -7,6 +7,7 @@ export interface Settings {
   claudeKey: string
   openaiKey: string
   geminiKey: string
+  deepseekKey: string
 }
 
 export interface Article {

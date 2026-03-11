@@ -7,6 +7,7 @@ export const defaultSettings: Settings = {
   claudeKey: '',
   openaiKey: '',
   geminiKey: '',
+  deepseekKey: '',
 }
 
 export function loadSettings(): Settings {
@@ -37,5 +38,6 @@ export function getProviderLabel(provider: AIProvider): string {
     case 'claude': return 'Claude (Anthropic)'
     case 'openai': return 'GPT (OpenAI)'
     case 'gemini': return 'Gemini (Google)'
+    case 'deepseek': return 'DeepSeek'
   }
 }

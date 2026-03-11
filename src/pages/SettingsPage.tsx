@@ -8,13 +8,14 @@ const PROVIDERS: { value: AIProvider; label: string; model: string }[] = [
   { value: 'claude', label: 'Claude (Anthropic)', model: 'claude-haiku-4-5' },
   { value: 'openai', label: 'GPT (OpenAI)', model: 'gpt-4o-mini' },
   { value: 'gemini', label: 'Gemini (Google)', model: 'gemini-1.5-flash' },
+  { value: 'deepseek', label: 'DeepSeek', model: 'deepseek-chat' },
 ]
 
 type TestStatus = 'idle' | 'loading' | 'ok' | 'error'
 
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings()
-  const [showKeys, setShowKeys] = useState({ claude: false, openai: false, gemini: false })
+  const [showKeys, setShowKeys] = useState({ claude: false, openai: false, gemini: false, deepseek: false })
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
   const [testError, setTestError] = useState('')
 
@@ -73,7 +74,7 @@ export default function SettingsPage() {
         <div className="text-sm font-medium text-gray-700">API Keys</div>
 
         {PROVIDERS.map(({ value, label }) => {
-          const keyField = `${value}Key` as 'claudeKey' | 'openaiKey' | 'geminiKey'
+          const keyField = `${value}Key` as 'claudeKey' | 'openaiKey' | 'geminiKey' | 'deepseekKey'
           return (
             <div key={value}>
               <label className="text-xs text-gray-500 mb-1 block">{label}</label>
