@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react'
 import { X, Loader2 } from 'lucide-react'
-import type { SavedGrammar, GrammarDetails } from '../types'
+import type { GrammarDetails } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getGrammarDetails } from '../lib/ai'
 import { saveGrammarDetails } from '../lib/db'
 
+interface GrammarLike {
+  id?: string
+  pattern: string
+  meaning: string
+  jlpt?: string
+  details_cache?: GrammarDetails | null
+}
+
 interface Props {
-  grammar: SavedGrammar
+  grammar: GrammarLike
   onClose: () => void
 }
 
@@ -37,7 +45,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
       const d = await getGrammarDetails(settings, grammar.pattern, grammar.meaning)
       setDetails(d)
       setLocalCache(grammar.pattern, d)
-      await saveGrammarDetails(grammar.id, d)
+      if (grammar.id) await saveGrammarDetails(grammar.id, d)
     } catch (e) {
       setError(e instanceof Error ? e.message : '获取详情失败')
     } finally {

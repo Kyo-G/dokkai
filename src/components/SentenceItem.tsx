@@ -6,6 +6,7 @@ import { saveSentenceAnalysis, addGrammar } from '../lib/db'
 import { useSettings } from '../hooks/useSettings'
 import { useSpeech } from '../hooks/useSpeech'
 import WordDetailSheet from './WordDetailSheet'
+import GrammarDetailSheet from './GrammarDetailSheet'
 
 const ROLE_COLORS: Record<string, string> = {
   '主语': 'bg-blue-100 text-blue-800',
@@ -37,6 +38,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
   const [error, setError] = useState('')
   const [analysis, setAnalysis] = useState<SentenceAnalysis | null>(sentence.analysis_cache)
   const [selectedWord, setSelectedWord] = useState<WordInSentence | null>(null)
+  const [selectedGrammar, setSelectedGrammar] = useState<GrammarPoint | null>(null)
   const { speak, stop, speaking } = useSpeech()
   const [savedGrammars, setSavedGrammars] = useState<Set<string>>(new Set())
   const [savingGrammar, setSavingGrammar] = useState<string | null>(null)
@@ -142,7 +144,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                     const saved = savedGrammars.has(g.pattern)
                     const saving = savingGrammar === g.pattern
                     return (
-                      <div key={i} className="bg-amber-50 rounded-xl p-3">
+                      <div key={i} className="bg-amber-50 rounded-xl p-3" onClick={() => setSelectedGrammar(g)}>
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-jp font-bold text-amber-900" lang="ja">{g.pattern}</span>
@@ -154,7 +156,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                             <span className="text-amber-700 text-sm">— {g.meaning}</span>
                           </div>
                           <button
-                            onClick={() => !saved && handleSaveGrammar(g)}
+                            onClick={e => { e.stopPropagation(); !saved && handleSaveGrammar(g) }}
                             className="shrink-0 mt-0.5"
                             disabled={saving}
                           >
@@ -204,6 +206,13 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
           articleId={articleId}
           sentenceId={sentence.id}
           onClose={() => setSelectedWord(null)}
+        />
+      )}
+
+      {selectedGrammar && (
+        <GrammarDetailSheet
+          grammar={selectedGrammar}
+          onClose={() => setSelectedGrammar(null)}
         />
       )}
     </>
