@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Golden yellow background -->
+  <rect width="512" height="512" rx="108" fill="#FFC125"/>
+
+  <!-- Capsule shadow -->
+  <g transform="translate(248, 268) rotate(-38)">
+    <rect x="-148" y="-52" width="296" height="104" rx="52"
+      fill="#C89000" opacity="0.3"/>
+  </g>
+
+  <!-- Capsule main body -->
+  <g transform="translate(248, 260) rotate(-38)">
+    <rect x="-148" y="-52" width="296" height="104" rx="52"
+      fill="#FEFCE8"/>
+  </g>
+
+  <!-- Capsule highlight sheen -->
+  <g transform="translate(248, 260) rotate(-38)">
+    <rect x="-130" y="-38" width="200" height="38" rx="19"
+      fill="white" opacity="0.6"/>
+  </g>
+
+  <!-- Top-right bracket (⌐ shape) -->
+  <!-- Horizontal bar -->
+  <rect x="340" y="76" width="96" height="22" rx="11" fill="#3D3530"/>
+  <!-- Vertical bar -->
+  <rect x="414" y="76" width="22" height="88" rx="11" fill="#3D3530"/>
+</svg>
