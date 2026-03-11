@@ -21,6 +21,7 @@ export default function VocabPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [caching, setCaching] = useState(false)
   const [cacheProgress, setCacheProgress] = useState<{done: number, total: number} | null>(null)
+  const [cacheToast, setCacheToast] = useState<string | null>(null)
 
   useEffect(() => {
     load()
@@ -69,7 +70,10 @@ export default function VocabPage() {
     for (const w of words) {
       if (!(await isAudioCached(w.word))) uncached.push(w.word)
     }
-    if (uncached.length === 0) return
+    if (uncached.length === 0) {
+      showToast('读音已全部缓存 ✓')
+      return
+    }
     setCaching(true)
     setCacheProgress({ done: 0, total: uncached.length })
     for (let i = 0; i < uncached.length; i++) {
@@ -81,6 +85,12 @@ export default function VocabPage() {
     }
     setCaching(false)
     setCacheProgress(null)
+    showToast('缓存完成 ✓')
+  }
+
+  function showToast(msg: string) {
+    setCacheToast(msg)
+    setTimeout(() => setCacheToast(null), 2500)
   }
 
   return (
@@ -246,6 +256,12 @@ export default function VocabPage() {
           existingWord={selectedWord}
           onClose={() => setSelectedWord(null)}
         />
+      )}
+
+      {cacheToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-full shadow-lg z-50 whitespace-nowrap">
+          {cacheToast}
+        </div>
       )}
 
       {selectedGrammar && (
