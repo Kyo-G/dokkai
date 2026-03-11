@@ -130,7 +130,7 @@ export default function WordDetailSheet({ wordInfo, articleId, existingWord, onC
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100">
+        <div className="px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-100">
           {added ? (
             <div className="flex items-center justify-center gap-2 py-3 text-green-700 font-medium">
               <Check size={18} />

@@ -141,7 +141,7 @@ export default function ArticlesPage() {
                 />
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100">
+            <div className="px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-100">
               <button
                 onClick={handleSave}
                 disabled={!content.trim() || saving}
