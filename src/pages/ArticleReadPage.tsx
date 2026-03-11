@@ -24,6 +24,7 @@ export default function ArticleReadPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [highlightId, setHighlightId] = useState<string | null>(targetSentenceId)
+  const [expandedSentence, setExpandedSentence] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) load(id)
@@ -85,23 +86,32 @@ export default function ArticleReadPage() {
   return (
     <div className="max-w-lg mx-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-100 dark:border-[#2a2a2a] z-10 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-gray-400 dark:text-gray-500">
-            <ArrowLeft size={22} />
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-gray-900 dark:text-gray-100 truncate">{article.title}</h1>
-              {article.level && (
-                <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
-                  {article.level}
-                </span>
-              )}
+      <div className="sticky top-0 z-10">
+        <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-100 dark:border-[#2a2a2a] px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="text-gray-400 dark:text-gray-500">
+              <ArrowLeft size={22} />
+            </button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="font-bold text-gray-900 dark:text-gray-100 truncate">{article.title}</h1>
+                {article.level && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
+                    {article.level}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">点击句子展开分析</p>
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">点击句子展开分析</p>
           </div>
         </div>
+        {expandedSentence && (
+          <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-200 dark:border-[#333] px-4 py-2.5">
+            <p className="font-jp text-sm text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-2" lang="ja">
+              {expandedSentence}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Sentences */}
@@ -119,6 +129,7 @@ export default function ArticleReadPage() {
                 sentence={sentence}
                 articleId={article.id}
                 onAnalyzed={handleAnalyzed}
+                onExpand={content => setExpandedSentence(content)}
               />
             </div>
           ))

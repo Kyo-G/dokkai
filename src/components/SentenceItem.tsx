@@ -29,9 +29,10 @@ interface Props {
   sentence: Sentence
   articleId: string
   onAnalyzed: (id: string, analysis: SentenceAnalysis) => void
+  onExpand?: (content: string | null) => void
 }
 
-export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props) {
+export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand }: Props) {
   const { settings } = useSettings()
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -48,9 +49,11 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
   async function handleExpand() {
     if (expanded) {
       setExpanded(false)
+      onExpand?.(null)
       return
     }
     setExpanded(true)
+    onExpand?.(sentence.content)
     if (analysis) return
 
     setLoading(true)
