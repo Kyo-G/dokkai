@@ -107,7 +107,7 @@ export default function ArticleReadPage() {
         </div>
         {expandedSentence && (
           <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-200 dark:border-[#333] px-4 py-2.5">
-            <p className="font-jp text-sm text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-2" lang="ja">
+            <p className="font-jp text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-h-20 overflow-y-auto" lang="ja">
               {expandedSentence}
             </p>
           </div>
