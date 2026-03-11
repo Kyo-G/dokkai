@@ -57,7 +57,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="relative bg-white rounded-t-2xl max-h-[85dvh] flex flex-col"
+        className="relative bg-white rounded-t-2xl max-h-[85dvh] flex flex-col animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}

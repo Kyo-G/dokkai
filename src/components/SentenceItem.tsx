@@ -134,7 +134,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
 
         {/* Analysis panel */}
         {expanded && analysis && (
-          <div className="border-t border-gray-100 px-4 py-4 space-y-5">
+          <div className="border-t border-gray-100 px-4 py-4 space-y-5 animate-fade-in-down">
             {/* Structure */}
             {analysis.structure?.length > 0 && (
               <div>
