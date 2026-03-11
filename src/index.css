@@ -7,6 +7,7 @@ body {
   color: #1a1a2e;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  overscroll-behavior-y: none; /* disable pull-to-refresh */
 }
 
 #root {
