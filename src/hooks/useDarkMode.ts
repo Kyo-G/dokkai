@@ -4,18 +4,22 @@ export type DarkModePreference = 'light' | 'dark' | 'system'
 
 function applyDarkClass(pref: DarkModePreference) {
   const html = document.documentElement
+  let isDark: boolean
   if (pref === 'dark') {
-    html.classList.add('dark')
+    isDark = true
   } else if (pref === 'light') {
-    html.classList.remove('dark')
+    isDark = false
   } else {
-    // system
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      html.classList.add('dark')
-    } else {
-      html.classList.remove('dark')
-    }
+    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
   }
+
+  isDark ? html.classList.add('dark') : html.classList.remove('dark')
+
+  // Update theme-color for status bar
+  const color = isDark ? '#111111' : '#f8f7f4'
+  document.querySelectorAll('meta[name="theme-color"]').forEach(el => {
+    el.setAttribute('content', color)
+  })
 }
 
 export function useDarkMode() {
