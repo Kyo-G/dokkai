@@ -144,7 +144,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                     const saved = savedGrammars.has(g.pattern)
                     const saving = savingGrammar === g.pattern
                     return (
-                      <div key={i} className="bg-amber-50 rounded-xl p-3" onClick={() => setSelectedGrammar(g)}>
+                      <div key={i} className="bg-amber-50 active:bg-amber-100 rounded-xl p-3 cursor-pointer" onClick={() => setSelectedGrammar(g)}>
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-jp font-bold text-amber-900" lang="ja">{g.pattern}</span>
