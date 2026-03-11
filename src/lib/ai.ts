@@ -1,4 +1,4 @@
-import type { Settings, SentenceAnalysis, WordDetails } from '../types'
+import type { Settings, SentenceAnalysis, WordDetails, GrammarDetails } from '../types'
 
 // ──────────────────────────────────────────────
 // Prompt builders
@@ -63,6 +63,25 @@ function buildWordDetailsPrompt(word: string, reading: string, pos: string): str
       "japanese": "日语例句3",
       "chinese": "中文翻译3"
     }
+  ]
+}`
+}
+
+function buildGrammarDetailsPrompt(pattern: string, meaning: string): string {
+  return `你是一位专业的日语教师，请详细讲解以下日语语法点，用中文，返回严格的JSON格式。
+
+语法：${pattern}（${meaning}）
+
+请返回如下JSON结构（不要有任何多余的文字，只返回JSON）：
+{
+  "pattern": "${pattern}",
+  "meaning": "${meaning}",
+  "usage": "详细的用法说明，包括接续方式和注意事项",
+  "nuance": "语感/语气说明，与近似语法的区别",
+  "examples": [
+    {"japanese": "例句1（带假名）", "chinese": "中文翻译1"},
+    {"japanese": "例句2（带假名）", "chinese": "中文翻译2"},
+    {"japanese": "例句3（带假名）", "chinese": "中文翻译3"}
   ]
 }`
 }
@@ -221,6 +240,16 @@ export async function getWordDetails(
   const text = await callAI(settings, prompt)
   const parsed = extractJSON(text) as WordDetails
   return parsed
+}
+
+export async function getGrammarDetails(
+  settings: Settings,
+  pattern: string,
+  meaning: string
+): Promise<GrammarDetails> {
+  const prompt = buildGrammarDetailsPrompt(pattern, meaning)
+  const text = await callAI(settings, prompt)
+  return extractJSON(text) as GrammarDetails
 }
 
 export async function testApiKey(settings: Settings): Promise<void> {

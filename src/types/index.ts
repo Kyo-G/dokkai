@@ -91,6 +91,14 @@ export interface ReviewRecord {
   created_at: string
 }
 
+export interface GrammarDetails {
+  pattern: string
+  meaning: string
+  usage: string
+  nuance: string
+  examples: Example[]
+}
+
 export interface SavedGrammar {
   id: string
   pattern: string
@@ -100,6 +108,7 @@ export interface SavedGrammar {
   article_id: string | null
   sentence_id: string | null
   article_title?: string
+  details_cache: GrammarDetails | null
   created_at: string
 }
 

@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import type {
   Article, Sentence, Word, ReviewRecord,
   SentenceAnalysis, WordDetails, ArticleLevel, ReviewGrade,
-  SavedGrammar, GrammarReviewRecord
+  SavedGrammar, GrammarReviewRecord, GrammarDetails
 } from '../types'
 import { sm2Next, initialSM2State, addDays } from './sm2'
 import { splitIntoSentences } from './sentences'
@@ -215,6 +215,14 @@ export async function addGrammar(
   })
 
   return data
+}
+
+export async function saveGrammarDetails(id: string, details: GrammarDetails): Promise<void> {
+  const { error } = await supabase
+    .from('grammar_points')
+    .update({ details_cache: details })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function deleteGrammar(id: string): Promise<void> {

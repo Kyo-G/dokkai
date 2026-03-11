@@ -4,6 +4,8 @@ import { BookMarked, Trash2, ChevronRight, Loader2, Download, ExternalLink } fro
 import { getWords, deleteWord, getGrammars, deleteGrammar } from '../lib/db'
 import type { Word, WordInSentence, SavedGrammar } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
+import GrammarDetailSheet from '../components/GrammarDetailSheet'
+
 import { isAudioCached, fetchTTS, storeBlob } from '../lib/audioCache'
 
 type Tab = 'words' | 'grammar'
@@ -15,6 +17,7 @@ export default function VocabPage() {
   const [grammars, setGrammars] = useState<SavedGrammar[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedWord, setSelectedWord] = useState<Word | null>(null)
+  const [selectedGrammar, setSelectedGrammar] = useState<SavedGrammar | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [caching, setCaching] = useState(false)
   const [cacheProgress, setCacheProgress] = useState<{done: number, total: number} | null>(null)
@@ -199,29 +202,32 @@ export default function VocabPage() {
                   </div>
                 ) : (
                   <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-jp font-medium text-amber-900" lang="ja">{g.pattern}</span>
-                        {g.jlpt && (
-                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium shrink-0">{g.jlpt}</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-700 mt-0.5">{g.meaning}</div>
-                      {g.usage && <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{g.usage}</div>}
-                      {g.article_title && (
-                        <div className="text-xs text-gray-300 mt-0.5 truncate flex items-center gap-1">
-                          来自：{g.article_title}
-                          {g.article_id && (
-                            <button
-                              onClick={e => { e.stopPropagation(); navigate(`/article/${g.article_id}${g.sentence_id ? `?sentence=${g.sentence_id}` : ''}`) }}
-                              className="text-gray-300 hover:text-red-400 shrink-0"
-                            >
-                              <ExternalLink size={11} />
-                            </button>
+                    <button onClick={() => setSelectedGrammar(g)} className="flex-1 text-left flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-jp font-medium text-amber-900" lang="ja">{g.pattern}</span>
+                          {g.jlpt && (
+                            <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium shrink-0">{g.jlpt}</span>
                           )}
                         </div>
-                      )}
-                    </div>
+                        <div className="text-sm text-gray-700 mt-0.5">{g.meaning}</div>
+                        {g.usage && <div className="text-xs text-gray-400 mt-0.5 line-clamp-1">{g.usage}</div>}
+                        {g.article_title && (
+                          <div className="text-xs text-gray-300 mt-0.5 truncate flex items-center gap-1">
+                            来自：{g.article_title}
+                            {g.article_id && (
+                              <button
+                                onClick={e => { e.stopPropagation(); navigate(`/article/${g.article_id}${g.sentence_id ? `?sentence=${g.sentence_id}` : ''}`) }}
+                                className="text-gray-300 hover:text-red-400 shrink-0"
+                              >
+                                <ExternalLink size={11} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                    </button>
                     <button onClick={() => setDeleteId(g.id)} className="p-1.5 text-gray-300 hover:text-red-400 shrink-0">
                       <Trash2 size={15} />
                     </button>
@@ -239,6 +245,13 @@ export default function VocabPage() {
           articleId={selectedWord.article_id}
           existingWord={selectedWord}
           onClose={() => setSelectedWord(null)}
+        />
+      )}
+
+      {selectedGrammar && (
+        <GrammarDetailSheet
+          grammar={selectedGrammar}
+          onClose={() => setSelectedGrammar(null)}
         />
       )}
     </div>
