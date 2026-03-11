@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Check, Volume2, Square } from 'lucide-react'
 import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint } from '../types'
 import { analyzeSentence } from '../lib/ai'
-import { saveSentenceAnalysis, addGrammar } from '../lib/db'
+import { saveSentenceAnalysis, addGrammar, addWord } from '../lib/db'
 import { useSettings } from '../hooks/useSettings'
 import { useSpeech } from '../hooks/useSpeech'
 import WordDetailSheet from './WordDetailSheet'
@@ -42,6 +42,8 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
   const { speak, stop, speaking } = useSpeech()
   const [savedGrammars, setSavedGrammars] = useState<Set<string>>(new Set())
   const [savingGrammar, setSavingGrammar] = useState<string | null>(null)
+  const [savedWords, setSavedWords] = useState<Set<string>>(new Set())
+  const [savingWord, setSavingWord] = useState<string | null>(null)
 
   async function handleExpand() {
     if (expanded) {
@@ -63,6 +65,22 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
       setExpanded(false)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleQuickSaveWord(w: WordInSentence) {
+    setSavingWord(w.word)
+    try {
+      await addWord(w.word, w.reading, w.pos, w.meaning, articleId, sentence.id)
+      setSavedWords(prev => new Set(prev).add(w.word))
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('已在生词本')) {
+        setSavedWords(prev => new Set(prev).add(w.word))
+      } else {
+        alert(e instanceof Error ? e.message : '收藏失败')
+      }
+    } finally {
+      setSavingWord(null)
     }
   }
 
@@ -181,18 +199,35 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
               <div>
                 <div className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">单词列表</div>
                 <div className="space-y-1">
-                  {analysis.words.map((w, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedWord(w)}
-                      className="w-full text-left flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-gray-50 active:bg-gray-100"
-                    >
-                      <span className="font-jp text-base font-medium text-gray-900 w-20 shrink-0" lang="ja">{w.word}</span>
-                      <span className="text-gray-400 text-sm w-20 shrink-0" lang="ja">{w.reading}</span>
-                      <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">{w.pos}</span>
-                      <span className="text-gray-700 text-sm flex-1 truncate">{w.meaning}</span>
-                    </button>
-                  ))}
+                  {analysis.words.map((w, i) => {
+                    const wordSaved = savedWords.has(w.word)
+                    const wordSaving = savingWord === w.word
+                    return (
+                      <div key={i} className="flex items-center gap-1 rounded-xl active:bg-gray-50">
+                        <button
+                          onClick={() => setSelectedWord(w)}
+                          className="flex-1 text-left flex items-center gap-3 py-2.5 px-3"
+                        >
+                          <span className="font-jp text-base font-medium text-gray-900 w-20 shrink-0" lang="ja">{w.word}</span>
+                          <span className="text-gray-400 text-sm w-20 shrink-0" lang="ja">{w.reading}</span>
+                          <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">{w.pos}</span>
+                          <span className="text-gray-700 text-sm flex-1 truncate">{w.meaning}</span>
+                        </button>
+                        <button
+                          onClick={() => !wordSaved && handleQuickSaveWord(w)}
+                          disabled={wordSaving}
+                          className="p-2 shrink-0"
+                        >
+                          {wordSaving
+                            ? <Loader2 size={15} className="animate-spin text-gray-300" />
+                            : wordSaved
+                              ? <Check size={15} className="text-green-500" />
+                              : <BookmarkPlus size={15} className="text-gray-300" />
+                          }
+                        </button>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
