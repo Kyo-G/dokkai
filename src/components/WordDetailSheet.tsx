@@ -1,0 +1,153 @@
+import { useState, useEffect } from 'react'
+import { X, BookmarkPlus, Loader2, Check } from 'lucide-react'
+import type { Word, WordDetails, WordInSentence } from '../types'
+import { useSettings } from '../hooks/useSettings'
+import { getWordDetails } from '../lib/ai'
+import { addWord, saveWordDetails } from '../lib/db'
+
+interface Props {
+  wordInfo: WordInSentence
+  articleId: string | null
+  existingWord?: Word | null
+  onClose: () => void
+}
+
+export default function WordDetailSheet({ wordInfo, articleId, existingWord, onClose }: Props) {
+  const { settings } = useSettings()
+  const [details, setDetails] = useState<WordDetails | null>(existingWord?.details_cache || null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [added, setAdded] = useState(!!existingWord)
+  const [adding, setAdding] = useState(false)
+
+  useEffect(() => {
+    if (!details) {
+      fetchDetails()
+    }
+  }, [])
+
+  async function fetchDetails() {
+    setLoading(true)
+    setError('')
+    try {
+      // If word exists in DB with details, use cache
+      if (existingWord?.is_detailed && existingWord.details_cache) {
+        setDetails(existingWord.details_cache)
+        return
+      }
+      const d = await getWordDetails(settings, wordInfo.word, wordInfo.reading, wordInfo.pos)
+      setDetails(d)
+      // Save to DB if word exists
+      if (existingWord) {
+        await saveWordDetails(existingWord.id, d)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '获取详情失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleAddToVocab() {
+    setAdding(true)
+    try {
+      const w = await addWord(wordInfo.word, wordInfo.reading, wordInfo.pos, wordInfo.meaning, articleId)
+      if (details) {
+        await saveWordDetails(w.id, details)
+      }
+      setAdded(true)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '添加失败')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className="relative bg-white rounded-t-2xl max-h-[85vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Handle */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-start justify-between px-5 py-3 border-b border-gray-100">
+          <div>
+            <div className="font-jp text-2xl font-bold text-gray-900">{wordInfo.word}</div>
+            <div className="text-sm text-gray-500 mt-0.5">{wordInfo.reading} · {wordInfo.pos}</div>
+          </div>
+          <button onClick={onClose} className="p-1 text-gray-400 mt-1">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+          {loading && (
+            <div className="flex items-center gap-2 text-gray-500 py-8 justify-center">
+              <Loader2 size={20} className="animate-spin" />
+              <span>正在获取详情…</span>
+            </div>
+          )}
+          {error && (
+            <div className="text-red-600 text-sm bg-red-50 rounded-lg p-3">
+              {error}
+              <button onClick={fetchDetails} className="ml-2 underline">重试</button>
+            </div>
+          )}
+          {details && (
+            <>
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">释义</div>
+                <div className="text-gray-900 font-medium">{details.meaning}</div>
+              </div>
+              {details.usage && (
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">用法</div>
+                  <div className="text-gray-700 text-sm leading-relaxed">{details.usage}</div>
+                </div>
+              )}
+              {details.examples?.length > 0 && (
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">例句</div>
+                  <div className="space-y-3">
+                    {details.examples.map((ex, i) => (
+                      <div key={i} className="bg-gray-50 rounded-xl p-3">
+                        <div className="font-jp text-gray-900 leading-relaxed">{ex.japanese}</div>
+                        <div className="text-gray-500 text-sm mt-1">{ex.chinese}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-gray-100">
+          {added ? (
+            <div className="flex items-center justify-center gap-2 py-3 text-green-700 font-medium">
+              <Check size={18} />
+              已加入生词本
+            </div>
+          ) : (
+            <button
+              onClick={handleAddToVocab}
+              disabled={adding}
+              className="w-full py-3 bg-red-700 text-white rounded-xl font-medium flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {adding ? <Loader2 size={18} className="animate-spin" /> : <BookmarkPlus size={18} />}
+              加入生词本
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
