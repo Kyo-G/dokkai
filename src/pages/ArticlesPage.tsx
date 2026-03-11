@@ -92,7 +92,7 @@ export default function ArticlesPage() {
         <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setShowImport(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative bg-white rounded-t-2xl flex flex-col max-h-[92vh]"
+            className="relative bg-white rounded-t-2xl flex flex-col max-h-[92dvh]"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-center pt-2 pb-1">

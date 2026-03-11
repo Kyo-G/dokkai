@@ -103,7 +103,7 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto flex flex-col min-h-[calc(100vh-4rem)]">
+    <div className="px-4 py-6 max-w-lg mx-auto flex flex-col min-h-[calc(100dvh-4rem)]">
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
