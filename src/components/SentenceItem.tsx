@@ -203,20 +203,19 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                     const wordSaved = savedWords.has(w.word)
                     const wordSaving = savingWord === w.word
                     return (
-                      <div key={i} className="flex items-center gap-1 rounded-xl active:bg-gray-50">
-                        <button
-                          onClick={() => setSelectedWord(w)}
-                          className="flex-1 text-left flex items-center gap-3 py-2.5 px-3"
-                        >
-                          <span className="font-jp text-base font-medium text-gray-900 w-20 shrink-0" lang="ja">{w.word}</span>
-                          <span className="text-gray-400 text-sm w-20 shrink-0" lang="ja">{w.reading}</span>
-                          <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">{w.pos}</span>
-                          <span className="text-gray-700 text-sm flex-1 truncate">{w.meaning}</span>
+                      <div key={i} className="bg-gray-50 active:bg-gray-100 rounded-xl p-3 flex items-start justify-between gap-2">
+                        <button onClick={() => setSelectedWord(w)} className="flex-1 text-left">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-jp font-bold text-gray-900" lang="ja">{w.word}</span>
+                            <span className="text-gray-400 text-sm" lang="ja">{w.reading}</span>
+                            <span className="text-xs text-gray-400 bg-gray-200 rounded px-1.5 py-0.5">{w.pos}</span>
+                          </div>
+                          <div className="text-gray-600 text-sm mt-0.5">{w.meaning}</div>
                         </button>
                         <button
                           onClick={() => !wordSaved && handleQuickSaveWord(w)}
                           disabled={wordSaving}
-                          className="p-2 shrink-0"
+                          className="shrink-0 mt-0.5"
                         >
                           {wordSaving
                             ? <Loader2 size={15} className="animate-spin text-gray-300" />
