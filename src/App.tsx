@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import BottomNav from './components/BottomNav'
 import ArticlesPage from './pages/ArticlesPage'
+import ImportPage from './pages/ImportPage'
 import ArticleReadPage from './pages/ArticleReadPage'
 import VocabPage from './pages/VocabPage'
 import ReviewPage from './pages/ReviewPage'
@@ -11,7 +12,7 @@ import { getDueCount } from './lib/db'
 function AppShell() {
   const location = useLocation()
   const [dueCount, setDueCount] = useState(0)
-  const hideNav = location.pathname.startsWith('/article/')
+  const hideNav = location.pathname.startsWith('/article/') || location.pathname === '/import'
 
   useEffect(() => {
     getDueCount().then(setDueCount).catch(() => {})
@@ -21,6 +22,7 @@ function AppShell() {
     <div className="min-h-screen bg-[#f8f7f4]">
       <Routes>
         <Route path="/" element={<ArticlesPage />} />
+        <Route path="/import" element={<ImportPage />} />
         <Route path="/article/:id" element={<ArticleReadPage />} />
         <Route path="/vocab" element={<VocabPage />} />
         <Route path="/review" element={<ReviewPage />} />

@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Plus, ChevronRight, Trash2, FileText, Loader2 } from 'lucide-react'
-import { getArticles, createArticle, deleteArticle } from '../lib/db'
-import type { Article, ArticleLevel } from '../types'
+import { getArticles, deleteArticle } from '../lib/db'
+import type { Article } from '../types'
 
-const LEVELS: ArticleLevel[] = ['', 'N5', 'N4', 'N3', 'N2', 'N1']
 const LEVEL_COLORS: Record<string, string> = {
   N5: 'bg-green-100 text-green-700',
   N4: 'bg-blue-100 text-blue-700',
@@ -14,13 +13,9 @@ const LEVEL_COLORS: Record<string, string> = {
 }
 
 export default function ArticlesPage() {
+  const navigate = useNavigate()
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
-  const [showImport, setShowImport] = useState(false)
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [level, setLevel] = useState<ArticleLevel>('')
-  const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -35,23 +30,6 @@ export default function ArticlesPage() {
       console.error(e)
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function handleSave() {
-    if (!content.trim()) return
-    setSaving(true)
-    try {
-      const article = await createArticle(title.trim(), content.trim(), level)
-      setArticles(prev => [article, ...prev])
-      setShowImport(false)
-      setTitle('')
-      setContent('')
-      setLevel('')
-    } catch (e) {
-      alert(e instanceof Error ? e.message : '保存失败')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -79,82 +57,13 @@ export default function ArticlesPage() {
           <p className="text-xs text-gray-400 mt-0.5">日語精讀</p>
         </div>
         <button
-          onClick={() => setShowImport(true)}
+          onClick={() => navigate('/import')}
           className="flex items-center gap-1.5 bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-medium"
         >
           <Plus size={16} />
           导入文章
         </button>
       </div>
-
-      {/* Import modal */}
-      {showImport && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={() => setShowImport(false)}>
-          <div className="absolute inset-0 bg-black/40" />
-          <div
-            className="relative bg-white rounded-t-2xl flex flex-col max-h-[85dvh]"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-center pt-2 pb-1">
-              <div className="w-10 h-1 bg-gray-300 rounded-full" />
-            </div>
-            <div className="px-5 py-3 border-b border-gray-100">
-              <h2 className="text-base font-bold text-gray-900">导入新文章</h2>
-            </div>
-            <div className="overflow-y-auto flex-1 min-h-0 px-5 py-4 space-y-4">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">标题（选填）</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="文章标题"
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-red-400"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">难度（选填）</label>
-                <div className="flex gap-2 flex-wrap">
-                  {LEVELS.map(l => (
-                    <button
-                      key={l || 'none'}
-                      onClick={() => setLevel(l)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
-                        ${level === l
-                          ? 'border-red-700 bg-red-50 text-red-700'
-                          : 'border-gray-200 text-gray-600'}`}
-                    >
-                      {l || '不指定'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">日语文本 *</label>
-                <textarea
-                  value={content}
-                  onChange={e => setContent(e.target.value)}
-                  placeholder="粘贴日语文章内容…"
-                  rows={7}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-jp
-                    focus:outline-none focus:border-red-400 resize-none leading-relaxed"
-                />
-              </div>
-            </div>
-            <div className="px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-100">
-              <button
-                onClick={handleSave}
-                disabled={!content.trim() || saving}
-                className="w-full py-3 bg-red-700 text-white rounded-xl font-medium
-                  flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {saving && <Loader2 size={18} className="animate-spin" />}
-                保存文章
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Article list */}
       {loading ? (
