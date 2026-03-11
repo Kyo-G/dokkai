@@ -78,8 +78,8 @@ export default function WordDetailSheet({ wordInfo, articleId, existingWord, onC
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-3 border-b border-gray-100">
           <div>
-            <div className="font-jp text-2xl font-bold text-gray-900">{wordInfo.word}</div>
-            <div className="text-sm text-gray-500 mt-0.5">{wordInfo.reading} · {wordInfo.pos}</div>
+            <div className="font-jp text-2xl font-bold text-gray-900" lang="ja">{wordInfo.word}</div>
+            <div className="text-sm text-gray-500 mt-0.5" lang="ja">{wordInfo.reading}</div>
           </div>
           <button onClick={onClose} className="p-1 text-gray-400 mt-1">
             <X size={20} />
@@ -118,7 +118,7 @@ export default function WordDetailSheet({ wordInfo, articleId, existingWord, onC
                   <div className="space-y-3">
                     {details.examples.map((ex, i) => (
                       <div key={i} className="bg-gray-50 rounded-xl p-3">
-                        <div className="font-jp text-gray-900 leading-relaxed">{ex.japanese}</div>
+                        <div className="font-jp text-gray-900 leading-relaxed" lang="ja">{ex.japanese}</div>
                         <div className="text-gray-500 text-sm mt-1">{ex.chinese}</div>
                       </div>
                     ))}

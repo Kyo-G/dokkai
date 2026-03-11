@@ -129,7 +129,7 @@ export default function ReviewPage() {
                 ${flipped ? 'border-gray-200' : 'border-gray-200 active:border-red-300'}`}
             >
               {/* Front: word */}
-              <div className="font-jp text-4xl font-bold text-gray-900 mb-2">
+              <div className="font-jp text-4xl font-bold text-gray-900 mb-2" lang="ja">
                 {current.word.word}
               </div>
 
@@ -141,7 +141,7 @@ export default function ReviewPage() {
                 <div className="mt-4 space-y-3 text-left">
                   <div className="h-px bg-gray-100" />
                   <div className="text-center">
-                    <div className="text-xl text-gray-600 font-jp">{current.word.reading}</div>
+                    <div className="text-xl text-gray-600 font-jp" lang="ja">{current.word.reading}</div>
                     <div className="text-xs text-gray-400 mt-1">{current.word.pos}</div>
                   </div>
                   <div className="text-center">
@@ -149,7 +149,7 @@ export default function ReviewPage() {
                   </div>
                   {current.word.details_cache?.examples?.[0] && (
                     <div className="bg-gray-50 rounded-xl p-3 mt-2">
-                      <div className="font-jp text-sm text-gray-700">
+                      <div className="font-jp text-sm text-gray-700" lang="ja">
                         {current.word.details_cache.examples[0].japanese}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">

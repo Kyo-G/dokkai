@@ -68,7 +68,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
           onClick={handleExpand}
           className="w-full text-left px-4 py-4 flex items-start gap-3"
         >
-          <div className="font-jp text-base leading-relaxed text-gray-900 flex-1">
+          <div className="font-jp text-base leading-relaxed text-gray-900 flex-1" lang="ja">
             {sentence.content}
           </div>
           <div className="mt-1 shrink-0 text-gray-400">
@@ -99,7 +99,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                       key={i}
                       className={`inline-flex flex-col items-center rounded-lg px-2 py-1 ${roleColor(part.role)}`}
                     >
-                      <span className="font-jp text-sm font-medium">{part.text}</span>
+                      <span className="font-jp text-sm font-medium" lang="ja">{part.text}</span>
                       <span className="text-[10px] opacity-70 mt-0.5">{part.role}</span>
                     </span>
                   ))}
@@ -115,7 +115,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                   {analysis.grammar.map((g, i) => (
                     <div key={i} className="bg-amber-50 rounded-xl p-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-jp font-bold text-amber-900">{g.pattern}</span>
+                        <span className="font-jp font-bold text-amber-900" lang="ja">{g.pattern}</span>
                         {g.jlpt && (
                           <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">
                             {g.jlpt}
@@ -141,8 +141,8 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed }: Props)
                       onClick={() => setSelectedWord(w)}
                       className="w-full text-left flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-gray-50 active:bg-gray-100"
                     >
-                      <span className="font-jp text-base font-medium text-gray-900 w-20 shrink-0">{w.word}</span>
-                      <span className="text-gray-400 text-sm w-20 shrink-0">{w.reading}</span>
+                      <span className="font-jp text-base font-medium text-gray-900 w-20 shrink-0" lang="ja">{w.word}</span>
+                      <span className="text-gray-400 text-sm w-20 shrink-0" lang="ja">{w.reading}</span>
                       <span className="text-xs text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 shrink-0">{w.pos}</span>
                       <span className="text-gray-700 text-sm flex-1 truncate">{w.meaning}</span>
                     </button>
