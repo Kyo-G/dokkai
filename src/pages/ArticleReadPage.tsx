@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { getArticle, getSentences } from '../lib/db'
+import { getArticle, getSentences, saveSentenceAnalysis } from '../lib/db'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
+import { analyzeSentence } from '../lib/ai'
+import { useSettings } from '../hooks/useSettings'
 
 const LEVEL_COLORS: Record<string, string> = {
   N5: 'bg-green-100 text-green-700',
@@ -16,6 +18,7 @@ const LEVEL_COLORS: Record<string, string> = {
 export default function ArticleReadPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { settings } = useSettings()
   const [searchParams] = useSearchParams()
   const targetSentenceId = searchParams.get('sentence')
   const sentenceRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -26,6 +29,8 @@ export default function ArticleReadPage() {
   const [highlightId, setHighlightId] = useState<string | null>(targetSentenceId)
   const [expandedSentence, setExpandedSentence] = useState<string | null>(null)
   const [showFurigana, setShowFurigana] = useState(false)
+  const [preProgress, setPreProgress] = useState<{ done: number; total: number } | null>(null)
+  const preAnalyzeActive = useRef(false)
 
   useEffect(() => {
     if (id) load(id)
@@ -67,6 +72,36 @@ export default function ArticleReadPage() {
     )
   }
 
+  // Background pre-analysis: runs after sentences load, processes unanalyzed ones sequentially
+  useEffect(() => {
+    const apiKey = settings.claudeKey || settings.openaiKey || settings.geminiKey || settings.deepseekKey
+    if (!apiKey) return
+
+    const unanalyzed = sentences.filter(s => !s.analysis_cache)
+    if (unanalyzed.length === 0) return
+
+    preAnalyzeActive.current = true
+    setPreProgress({ done: 0, total: unanalyzed.length })
+
+    async function run() {
+      for (let i = 0; i < unanalyzed.length; i++) {
+        if (!preAnalyzeActive.current) break
+        const s = unanalyzed[i]
+        try {
+          const result = await analyzeSentence(settings, s.content)
+          if (!preAnalyzeActive.current) break
+          await saveSentenceAnalysis(s.id, result)
+          handleAnalyzed(s.id, result)
+        } catch { /* ignore individual failures */ }
+        setPreProgress({ done: i + 1, total: unanalyzed.length })
+      }
+      setPreProgress(null)
+    }
+
+    run()
+    return () => { preAnalyzeActive.current = false }
+  }, [sentences.length, settings.provider])
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -102,7 +137,13 @@ export default function ArticleReadPage() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">点击句子展开分析</p>
+              {preProgress
+                ? <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 flex items-center gap-1">
+                    <Loader2 size={10} className="animate-spin" />
+                    预分析中 {preProgress.done}/{preProgress.total}
+                  </p>
+                : <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">点击句子展开分析</p>
+              }
             </div>
             <button
               onClick={() => setShowFurigana(v => !v)}
