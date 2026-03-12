@@ -53,6 +53,7 @@ export interface WordInSentence {
   reading: string
   pos: string // 词性
   meaning: string
+  pitch?: number // 音调核位置，0=平板型
 }
 
 export interface Word {
@@ -73,6 +74,7 @@ export interface WordDetails {
   word: string
   reading: string
   pos: string
+  pitch?: number
   meaning: string
   usage: string
   examples: Example[]

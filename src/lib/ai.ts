@@ -28,7 +28,8 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
       "word": "单词原形",
       "reading": "假名读音",
       "pos": "词性（名词/动词/形容词/副词/助词 等）",
-      "meaning": "中文释义"
+      "meaning": "中文释义",
+      "pitch": 0
     }
   ]
 }
@@ -37,7 +38,8 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
 - furigana 字段：只对汉字部分标注{漢字|よみ}，假名、符号原样保留，例如：{私|わたし}は{日本語|にほんご}が{好き|すき}です。
 - structure 要覆盖整个句子，不能遗漏
 - grammar 只列出值得学习的语法点，可以为空数组
-- words 列出句中主要单词（排除简单助词如は、が、を、に）`
+- words 列出句中主要单词（排除简单助词如は、が、を、に）
+- pitch 为东京方言音调核位置：0=平板型（无下降），1=头高型，2及以上=中高型/尾高型，填整数`
 }
 
 function buildWordDetailsPrompt(word: string, reading: string, pos: string): string {
@@ -50,6 +52,7 @@ function buildWordDetailsPrompt(word: string, reading: string, pos: string): str
   "word": "${word}",
   "reading": "${reading}",
   "pos": "${pos}",
+  "pitch": 0,
   "meaning": "完整的中文释义",
   "usage": "用法说明，包括常见搭配和注意事项",
   "examples": [

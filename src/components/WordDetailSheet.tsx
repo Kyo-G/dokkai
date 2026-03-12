@@ -93,7 +93,15 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
           <div className="flex items-center gap-3">
             <div>
               <div className="font-jp text-2xl font-bold text-gray-900 dark:text-gray-100" lang="ja">{wordInfo.word}</div>
-              <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5" lang="ja">{wordInfo.reading} · {wordInfo.pos}</div>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span className="text-sm text-gray-500 dark:text-gray-400" lang="ja">{wordInfo.reading}</span>
+                {(wordInfo.pitch !== undefined || details?.pitch !== undefined) && (
+                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded px-1.5 py-0.5 leading-none">
+                    {wordInfo.pitch ?? details?.pitch}
+                  </span>
+                )}
+                <span className="text-sm text-gray-400 dark:text-gray-500">{wordInfo.pos}</span>
+              </div>
             </div>
             <button
               onClick={() => speaking ? stop() : speak(wordInfo.word)}

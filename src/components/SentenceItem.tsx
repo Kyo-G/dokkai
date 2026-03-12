@@ -218,6 +218,11 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                               {w.word}
                               <rt className="text-[10px] font-normal text-gray-400 dark:text-gray-500">{w.reading}</rt>
                             </ruby>
+                            {w.pitch !== undefined && (
+                              <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded px-1 py-0.5 leading-none">
+                                {w.pitch}
+                              </span>
+                            )}
                             <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
                           </div>
                           <div className="text-gray-600 dark:text-gray-400 text-sm mt-0.5">{w.meaning}</div>
