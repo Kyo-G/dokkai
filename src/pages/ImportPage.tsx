@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Link } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { createArticle } from '../lib/db'
 import type { ArticleLevel } from '../types'
 
@@ -8,33 +8,10 @@ const LEVELS: ArticleLevel[] = ['', 'N5', 'N4', 'N3', 'N2', 'N1']
 
 export default function ImportPage() {
   const navigate = useNavigate()
-  const [url, setUrl] = useState('')
-  const [fetching, setFetching] = useState(false)
-  const [fetchError, setFetchError] = useState('')
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [level, setLevel] = useState<ArticleLevel>('')
   const [saving, setSaving] = useState(false)
-
-  async function handleFetch() {
-    if (!url.trim()) return
-    setFetching(true)
-    setFetchError('')
-    try {
-      const res = await fetch(`/api/fetch-article?url=${encodeURIComponent(url.trim())}`)
-      if (!res.ok) {
-        const msg = await res.text()
-        throw new Error(msg || `请求失败 (${res.status})`)
-      }
-      const data = await res.json() as { title: string; content: string }
-      if (data.title && !title) setTitle(data.title)
-      setContent(data.content)
-    } catch (e) {
-      setFetchError(e instanceof Error ? e.message : '抓取失败，请手动粘贴内容')
-    } finally {
-      setFetching(false)
-    }
-  }
 
   async function handleSave() {
     if (!content.trim()) return
@@ -68,37 +45,6 @@ export default function ImportPage() {
 
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-
-        {/* URL fetch */}
-        <div>
-          <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">从网址导入（选填）</label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
-              <input
-                type="url"
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleFetch()}
-                placeholder="https://www3.nhk.or.jp/news/…"
-                className="w-full pl-8 pr-3 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-red-400"
-              />
-            </div>
-            <button
-              onClick={handleFetch}
-              disabled={fetching || !url.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white rounded-xl text-sm font-medium disabled:opacity-40 shrink-0"
-            >
-              {fetching ? <Loader2 size={14} className="animate-spin" /> : '抓取'}
-            </button>
-          </div>
-          {fetchError && (
-            <p className="text-xs text-red-500 mt-1.5">{fetchError}</p>
-          )}
-        </div>
-
-        <div className="border-t border-gray-100 dark:border-[#2a2a2a]" />
-
         <div>
           <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">标题（选填）</label>
           <input
@@ -131,7 +77,7 @@ export default function ImportPage() {
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
-            placeholder="粘贴日语文章内容，或从上方输入网址自动抓取…"
+            placeholder="粘贴日语文章内容…"
             rows={12}
             className="w-full px-3 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm font-jp bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600
               focus:outline-none focus:border-red-400 resize-none leading-relaxed"
