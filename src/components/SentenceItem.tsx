@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Check, Volume2, Square } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Check, Volume2, Square, RefreshCw } from 'lucide-react'
 import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint } from '../types'
 import { analyzeSentence } from '../lib/ai'
 import { saveSentenceAnalysis, addGrammar, addWord } from '../lib/db'
@@ -60,16 +60,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
   const [savedWords, setSavedWords] = useState<Set<string>>(new Set())
   const [savingWord, setSavingWord] = useState<string | null>(null)
 
-  async function handleExpand() {
-    if (expanded) {
-      setExpanded(false)
-      onExpand?.(null)
-      return
-    }
-    setExpanded(true)
-    onExpand?.(sentence.content)
-    if (analysis) return
-
+  async function runAnalysis() {
     setLoading(true)
     setError('')
     try {
@@ -79,10 +70,21 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
       onAnalyzed(sentence.id, result)
     } catch (e) {
       setError(e instanceof Error ? e.message : '分析失败，请重试')
-      setExpanded(false)
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleExpand() {
+    if (expanded) {
+      setExpanded(false)
+      onExpand?.(null)
+      return
+    }
+    setExpanded(true)
+    onExpand?.(sentence.content)
+    if (analysis) return
+    await runAnalysis()
   }
 
   async function handleQuickSaveWord(w: WordInSentence) {
@@ -155,6 +157,18 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
         {/* Analysis panel */}
         {expanded && analysis && (
           <div className="border-t border-gray-100 dark:border-[#2a2a2a] px-4 py-4 space-y-5 animate-fade-in-down">
+            {/* Re-analyze button */}
+            <div className="flex justify-end">
+              <button
+                onClick={runAnalysis}
+                disabled={loading}
+                className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 active:text-gray-600 disabled:opacity-40"
+              >
+                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+                重新分析
+              </button>
+            </div>
+
             {/* Structure */}
             {analysis.structure?.length > 0 && (
               <div>
