@@ -1,5 +1,5 @@
 import { Readability } from '@mozilla/readability'
-import { parseHTML } from 'linkedom'
+import { JSDOM } from 'jsdom'
 
 export default async function handler(req: Request) {
   const url = new URL(req.url).searchParams.get('url')
@@ -25,24 +25,14 @@ export default async function handler(req: Request) {
     return json({ error: `网络错误: ${String(e)}` }, 502)
   }
 
-  // Parse with linkedom, then extract main content with Readability
-  const { document } = parseHTML(html)
-
-  // Set the base URL so Readability can resolve relative links
-  const base = document.createElement('base')
-  base.setAttribute('href', targetUrl.origin)
-  document.head?.appendChild(base)
-
-  const reader = new Readability(document as unknown as Document)
+  const dom = new JSDOM(html, { url: targetUrl.toString() })
+  const reader = new Readability(dom.window.document)
   const article = reader.parse()
 
-  if (!article || !article.textContent?.trim()) {
+  if (!article?.textContent?.trim()) {
     return json({ error: '无法提取正文，请手动粘贴内容' }, 422)
   }
 
-  // Clean up the extracted text:
-  // - Normalize whitespace within lines
-  // - Keep meaningful line breaks (paragraph structure)
   const content = article.textContent
     .split('\n')
     .map(line => line.replace(/\s+/g, ' ').trim())
