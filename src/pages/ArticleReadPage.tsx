@@ -51,7 +51,7 @@ export default function ArticleReadPage() {
   const [preProgress, setPreProgress] = useState<{ done: number; total: number } | null>(null)
   const preAnalyzeActive = useRef(false)
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
-  const [mode, setMode] = useState<Mode>('study')
+  const [mode, setMode] = useState<Mode>('read')
   const [jumpToId, setJumpToId] = useState<string | null>(null)
 
   useEffect(() => {
