@@ -211,7 +211,7 @@ export default function ArticleReadPage() {
                 key={s.id}
                 ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
                 onClick={() => switchToStudy(s.id)}
-                className={`inline rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
+                className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
                   ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
               >
                 {showFurigana && s.analysis_cache?.furigana
