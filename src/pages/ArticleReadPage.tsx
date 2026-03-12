@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { getArticle, getSentences, saveSentenceAnalysis } from '../lib/db'
+import { getProgress, markSentenceRead } from '../lib/progress'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
 import { analyzeSentence } from '../lib/ai'
@@ -31,6 +32,7 @@ export default function ArticleReadPage() {
   const [showFurigana, setShowFurigana] = useState(false)
   const [preProgress, setPreProgress] = useState<{ done: number; total: number } | null>(null)
   const preAnalyzeActive = useRef(false)
+  const [readIds, setReadIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (id) load(id)
@@ -45,14 +47,19 @@ export default function ArticleReadPage() {
       if (!art) { setError('文章不存在'); return }
       setArticle(art)
       setSentences(sents)
-      // Scroll to target sentence after render
-      if (targetSentenceId) {
+
+      // Restore reading progress
+      const prog = getProgress(articleId)
+      setReadIds(new Set(prog.readIds))
+
+      // Scroll to target sentence or last read position
+      const scrollTo = targetSentenceId ?? prog.lastReadId
+      if (scrollTo) {
         setTimeout(() => {
-          const el = sentenceRefs.current[targetSentenceId]
+          const el = sentenceRefs.current[scrollTo]
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            // Clear highlight after 3s
-            setTimeout(() => setHighlightId(null), 3000)
+            if (targetSentenceId) setTimeout(() => setHighlightId(null), 3000)
           }
         }, 300)
       }
@@ -184,6 +191,11 @@ export default function ArticleReadPage() {
                 onAnalyzed={handleAnalyzed}
                 onExpand={content => setExpandedSentence(content)}
                 showFurigana={showFurigana}
+                isRead={readIds.has(sentence.id)}
+                onRead={() => {
+                  setReadIds(prev => new Set(prev).add(sentence.id))
+                  markSentenceRead(article.id, sentence.id, sentences.length)
+                }}
               />
             </div>
           ))

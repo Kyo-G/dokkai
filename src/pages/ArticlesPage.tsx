@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Plus, ChevronRight, Trash2, FileText, Loader2 } from 'lucide-react'
 import { getArticles, deleteArticle } from '../lib/db'
 import type { Article } from '../types'
+import { getProgress } from '../lib/progress'
 
 const LEVEL_COLORS: Record<string, string> = {
   N5: 'bg-green-100 text-green-700',
@@ -99,6 +100,10 @@ export default function ArticlesPage() {
                   to={`/article/${article.id}`}
                   className="block bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] rounded-2xl p-4"
                 >
+                  {(() => {
+                    const prog = getProgress(article.id)
+                    const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
+                    return (
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -112,7 +117,22 @@ export default function ArticlesPage() {
                       <p className="text-xs text-gray-400 dark:text-gray-500 font-jp leading-relaxed line-clamp-2">
                         {article.content.slice(0, 80)}…
                       </p>
-                      <p className="text-xs text-gray-300 dark:text-gray-600 mt-2">{formatDate(article.created_at)}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-xs text-gray-300 dark:text-gray-600">{formatDate(article.created_at)}</p>
+                        {prog.total > 0 && (
+                          <div className="flex items-center gap-1.5 flex-1">
+                            <div className="flex-1 h-1 bg-gray-100 dark:bg-[#333] rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
+                              {prog.readIds.length}/{prog.total} 句
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
@@ -124,6 +144,8 @@ export default function ArticlesPage() {
                       <ChevronRight size={18} className="text-gray-300 dark:text-gray-600" />
                     </div>
                   </div>
+                    )
+                  })()}
                 </Link>
               )}
             </div>

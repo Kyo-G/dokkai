@@ -44,9 +44,11 @@ interface Props {
   onAnalyzed: (id: string, analysis: SentenceAnalysis) => void
   onExpand?: (content: string | null) => void
   showFurigana?: boolean
+  isRead?: boolean
+  onRead?: () => void
 }
 
-export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand, showFurigana }: Props) {
+export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand, showFurigana, isRead, onRead }: Props) {
   const { settings } = useSettings()
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -83,6 +85,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
     }
     setExpanded(true)
     onExpand?.(sentence.content)
+    onRead?.()
     if (analysis) return
     await runAnalysis()
   }
@@ -122,7 +125,14 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
 
   return (
     <>
-      <div className="border border-gray-200 dark:border-[#333] rounded-2xl overflow-hidden bg-white dark:bg-[#1e1e1e]">
+      <div className={`border rounded-2xl overflow-hidden bg-white dark:bg-[#1e1e1e] flex ${
+        isRead
+          ? 'border-gray-200 dark:border-[#333]'
+          : 'border-gray-200 dark:border-[#333]'
+      }`}>
+        {/* Read indicator bar */}
+        <div className={`w-1 shrink-0 transition-colors duration-500 ${isRead ? 'bg-green-400 dark:bg-green-600' : 'bg-transparent'}`} />
+        <div className="flex-1 min-w-0">
         {/* Sentence row */}
         <div className="px-4 py-4 flex items-start gap-3">
           <button onClick={handleExpand} className="flex-1 text-left flex items-start gap-3">
@@ -293,6 +303,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             })()}
           </div>
         )}
+        </div>{/* flex-1 inner */}
       </div>
 
       {selectedWord && (
