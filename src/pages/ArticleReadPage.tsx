@@ -5,6 +5,7 @@ import { getArticle, getSentences, saveSentenceAnalysis } from '../lib/db'
 import { getProgress, markSentenceRead } from '../lib/progress'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
+import Furigana from '../components/Furigana'
 import { analyzeSentence } from '../lib/ai'
 import { useSettings } from '../hooks/useSettings'
 
@@ -16,13 +17,15 @@ const LEVEL_COLORS: Record<string, string> = {
   N1: 'bg-red-100 text-red-700',
 }
 
+type Mode = 'read' | 'study'
+
 export default function ArticleReadPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { settings } = useSettings()
   const [searchParams] = useSearchParams()
   const targetSentenceId = searchParams.get('sentence')
-  const sentenceRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const sentenceRefs = useRef<Record<string, HTMLElement | null>>({})
   const [article, setArticle] = useState<Article | null>(null)
   const [sentences, setSentences] = useState<Sentence[]>([])
   const [loading, setLoading] = useState(true)
@@ -33,6 +36,8 @@ export default function ArticleReadPage() {
   const [preProgress, setPreProgress] = useState<{ done: number; total: number } | null>(null)
   const preAnalyzeActive = useRef(false)
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
+  const [mode, setMode] = useState<Mode>('study')
+  const [jumpToId, setJumpToId] = useState<string | null>(null)
 
   useEffect(() => {
     if (id) load(id)
@@ -48,19 +53,14 @@ export default function ArticleReadPage() {
       setArticle(art)
       setSentences(sents)
 
-      // Restore reading progress
       const prog = getProgress(articleId)
       setReadIds(new Set(prog.readIds))
 
-      // Scroll to target sentence or last read position
       const scrollTo = targetSentenceId ?? prog.lastReadId
       if (scrollTo) {
         setTimeout(() => {
-          const el = sentenceRefs.current[scrollTo]
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            if (targetSentenceId) setTimeout(() => setHighlightId(null), 3000)
-          }
+          sentenceRefs.current[scrollTo]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          if (targetSentenceId) setTimeout(() => setHighlightId(null), 3000)
         }, 300)
       }
     } catch (e) {
@@ -72,18 +72,13 @@ export default function ArticleReadPage() {
 
   function handleAnalyzed(sentenceId: string, analysis: SentenceAnalysis) {
     setSentences(prev =>
-      prev.map(s => s.id === sentenceId
-        ? { ...s, analysis_cache: analysis, is_analyzed: true }
-        : s
-      )
+      prev.map(s => s.id === sentenceId ? { ...s, analysis_cache: analysis, is_analyzed: true } : s)
     )
   }
 
-  // Background pre-analysis: runs after sentences load, processes unanalyzed ones sequentially
   useEffect(() => {
     const apiKey = settings.claudeKey || settings.openaiKey || settings.geminiKey || settings.deepseekKey
     if (!apiKey) return
-
     const unanalyzed = sentences.filter(s => !s.analysis_cache)
     if (unanalyzed.length === 0) return
 
@@ -93,13 +88,12 @@ export default function ArticleReadPage() {
     async function run() {
       for (let i = 0; i < unanalyzed.length; i++) {
         if (!preAnalyzeActive.current) break
-        const s = unanalyzed[i]
         try {
-          const result = await analyzeSentence(settings, s.content)
+          const result = await analyzeSentence(settings, unanalyzed[i].content)
           if (!preAnalyzeActive.current) break
-          await saveSentenceAnalysis(s.id, result)
-          handleAnalyzed(s.id, result)
-        } catch { /* ignore individual failures */ }
+          await saveSentenceAnalysis(unanalyzed[i].id, result)
+          handleAnalyzed(unanalyzed[i].id, result)
+        } catch { /* ignore */ }
         setPreProgress({ done: i + 1, total: unanalyzed.length })
       }
       setPreProgress(null)
@@ -108,6 +102,23 @@ export default function ArticleReadPage() {
     run()
     return () => { preAnalyzeActive.current = false }
   }, [sentences.length, settings.provider])
+
+  // After switching to study mode with a jump target, scroll + highlight it
+  useEffect(() => {
+    if (mode === 'study' && jumpToId) {
+      setTimeout(() => {
+        sentenceRefs.current[jumpToId]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        setHighlightId(jumpToId)
+        setTimeout(() => setHighlightId(null), 2000)
+      }, 50)
+      setJumpToId(null)
+    }
+  }, [mode, jumpToId])
+
+  function switchToStudy(sentenceId: string) {
+    setMode('study')
+    setJumpToId(sentenceId)
+  }
 
   if (loading) {
     return (
@@ -132,7 +143,7 @@ export default function ArticleReadPage() {
       <div className="sticky top-0 z-10">
         <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-100 dark:border-[#2a2a2a] px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="text-gray-400 dark:text-gray-500">
+            <button onClick={() => navigate(-1)} className="text-gray-400 dark:text-gray-500 shrink-0">
               <ArrowLeft size={22} />
             </button>
             <div className="flex-1 min-w-0">
@@ -149,23 +160,38 @@ export default function ArticleReadPage() {
                     <Loader2 size={10} className="animate-spin" />
                     预分析中 {preProgress.done}/{preProgress.total}
                   </p>
-                : <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">点击句子展开分析</p>
+                : <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    {mode === 'read' ? '点击句子切换到精读' : '点击句子展开分析'}
+                  </p>
               }
             </div>
+            {/* Mode toggle */}
+            <div className="flex shrink-0 bg-gray-100 dark:bg-[#2a2a2a] rounded-lg p-0.5 text-xs font-medium">
+              <button
+                onClick={() => setMode('read')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${mode === 'read' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 dark:text-gray-500'}`}
+              >通读</button>
+              <button
+                onClick={() => setMode('study')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${mode === 'study' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 dark:text-gray-500'}`}
+              >精读</button>
+            </div>
+            {/* Furigana toggle */}
             <button
               onClick={() => setShowFurigana(v => !v)}
-              className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium font-jp border transition-colors ${
+              className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
                 showFurigana
                   ? 'bg-red-700 text-white border-red-700'
                   : 'border-gray-200 dark:border-[#444] text-gray-500 dark:text-gray-400'
               }`}
-              title="振り仮名の表示切り替え"
             >
-              振
+              {showFurigana ? '隐藏假名' : '显示假名'}
             </button>
           </div>
         </div>
-        {expandedSentence && (
+
+        {/* Expanded sentence banner — only in study mode */}
+        {mode === 'study' && expandedSentence && (
           <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-200 dark:border-[#333] px-4 py-2.5">
             <p className="font-jp text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-h-20 overflow-y-auto" lang="ja">
               {expandedSentence}
@@ -174,12 +200,31 @@ export default function ArticleReadPage() {
         )}
       </div>
 
-      {/* Sentences */}
-      <div className="px-4 py-4 space-y-3 pb-24">
-        {sentences.length === 0 ? (
-          <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-8">暂无句子数据</p>
-        ) : (
-          sentences.map(sentence => (
+      {sentences.length === 0 ? (
+        <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-16">暂无句子数据</p>
+      ) : mode === 'read' ? (
+        /* ── 通读模式 ── */
+        <div className="px-5 py-8 pb-24">
+          <p className="font-jp text-[17px] leading-[2.2] text-gray-900 dark:text-gray-100" lang="ja">
+            {sentences.map(s => (
+              <button
+                key={s.id}
+                ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
+                onClick={() => switchToStudy(s.id)}
+                className={`inline rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
+                  ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
+              >
+                {showFurigana && s.analysis_cache?.furigana
+                  ? <Furigana text={s.analysis_cache.furigana} />
+                  : s.content}
+              </button>
+            ))}
+          </p>
+        </div>
+      ) : (
+        /* ── 精读模式 ── */
+        <div className="px-4 py-4 space-y-3 pb-24">
+          {sentences.map(sentence => (
             <div
               key={sentence.id}
               ref={el => { sentenceRefs.current[sentence.id] = el }}
@@ -198,9 +243,9 @@ export default function ArticleReadPage() {
                 }}
               />
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
