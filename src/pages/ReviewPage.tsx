@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { RotateCcw, Check, Loader2, PartyPopper, Volume2, Square } from 'lucide-react'
+import { RotateCcw, Check, Loader2, Volume2, Square } from 'lucide-react'
 import { getDueReviews, submitReview, submitGrammarReview } from '../lib/db'
 import type { AnyReviewItem } from '../lib/db'
 import type { ReviewGrade } from '../types'
@@ -7,11 +7,11 @@ import WordDetailSheet from '../components/WordDetailSheet'
 import type { WordInSentence } from '../types'
 import { useSpeech } from '../hooks/useSpeech'
 
-const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string }[] = [
-  { grade: 0, label: '忘了', color: 'bg-red-100 text-red-700 border-red-200' },
-  { grade: 1, label: '模糊', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  { grade: 2, label: '记得', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { grade: 3, label: '很熟', color: 'bg-green-100 text-green-700 border-green-200' },
+const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string; emoji: string }[] = [
+  { grade: 0, label: '忘了', color: 'bg-red-100 text-red-700 border-red-200 active:bg-red-200',    emoji: '😣' },
+  { grade: 1, label: '模糊', color: 'bg-orange-100 text-orange-700 border-orange-200 active:bg-orange-200', emoji: '🤔' },
+  { grade: 2, label: '记得', color: 'bg-blue-100 text-blue-700 border-blue-200 active:bg-blue-200',  emoji: '😊' },
+  { grade: 3, label: '很熟', color: 'bg-green-100 text-green-700 border-green-200 active:bg-green-200',  emoji: '🎯' },
 ]
 
 export default function ReviewPage() {
@@ -19,8 +19,10 @@ export default function ReviewPage() {
   const [loading, setLoading] = useState(true)
   const [flipped, setFlipped] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [exiting, setExiting] = useState(false)
   const [done, setDone] = useState(0)
   const [total, setTotal] = useState(0)
+  const [gradeMap, setGradeMap] = useState<Record<number, number>>({ 0: 0, 1: 0, 2: 0, 3: 0 })
   const [showDetail, setShowDetail] = useState(false)
   const { speak, stop, speaking } = useSpeech()
 
@@ -34,6 +36,8 @@ export default function ReviewPage() {
       setTotal(items.length)
       setDone(0)
       setFlipped(false)
+      setExiting(false)
+      setGradeMap({ 0: 0, 1: 0, 2: 0, 3: 0 })
     } catch (e) {
       console.error(e)
     } finally {
@@ -43,7 +47,11 @@ export default function ReviewPage() {
 
   async function handleGrade(grade: ReviewGrade) {
     const current = queue[0]
-    if (!current) return
+    if (!current || submitting || exiting) return
+
+    setExiting(true)
+    await new Promise(r => setTimeout(r, 220))
+
     setSubmitting(true)
     try {
       if (current.type === 'word') {
@@ -51,6 +59,7 @@ export default function ReviewPage() {
       } else {
         await submitGrammarReview(current.id, current.interval, current.ease_factor, grade)
       }
+      setGradeMap(prev => ({ ...prev, [grade]: (prev[grade] ?? 0) + 1 }))
       setQueue(prev => prev.slice(1))
       setDone(prev => prev + 1)
       setFlipped(false)
@@ -58,11 +67,18 @@ export default function ReviewPage() {
       alert(e instanceof Error ? e.message : '提交失败')
     } finally {
       setSubmitting(false)
+      setExiting(false)
     }
   }
 
   const current = queue[0]
   const progress = total > 0 ? (done / total) * 100 : 0
+
+  // Progress bar color: red → amber → green
+  const barColor =
+    progress >= 80 ? 'bg-green-500' :
+    progress >= 40 ? 'bg-amber-500' :
+    'bg-red-700'
 
   if (loading) {
     return (
@@ -72,13 +88,45 @@ export default function ReviewPage() {
     )
   }
 
+  // ── Completion screen ──
   if (total > 0 && queue.length === 0) {
+    const perfect = gradeMap[0] === 0 && gradeMap[1] === 0
+    const strong  = (gradeMap[2] + gradeMap[3]) / total >= 0.8
+    const message = perfect ? '全部掌握，表现完美！' : strong ? '大部分都记住了，继续加油！' : '复习完成，坚持就是胜利！'
+
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-        <PartyPopper size={56} className="text-yellow-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">今日复习完成！</h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">共复习了 {done} 项</p>
-        <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm text-gray-600 dark:text-gray-400">再次检查</button>
+        <div className="text-7xl mb-5 animate-bounce-in select-none">
+          {perfect ? '🏆' : strong ? '🎉' : '💪'}
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">今日复习完成！</h2>
+        <p className="text-sm text-gray-400 dark:text-gray-500 mb-6">{message}</p>
+
+        {/* Grade breakdown */}
+        <div className="grid grid-cols-4 gap-2 w-full max-w-xs mb-8">
+          {GRADE_BUTTONS.map(({ grade, label, emoji, color }) => (
+            gradeMap[grade] > 0 ? (
+              <div key={grade} className={`flex flex-col items-center rounded-2xl py-3 px-1 border ${color}`}>
+                <span className="text-xl mb-0.5">{emoji}</span>
+                <span className="text-lg font-bold leading-none">{gradeMap[grade]}</span>
+                <span className="text-[11px] mt-0.5 opacity-80">{label}</span>
+              </div>
+            ) : (
+              <div key={grade} className="flex flex-col items-center rounded-2xl py-3 px-1 border border-gray-100 dark:border-[#2a2a2a] opacity-30">
+                <span className="text-xl mb-0.5">{emoji}</span>
+                <span className="text-lg font-bold leading-none text-gray-400">0</span>
+                <span className="text-[11px] mt-0.5 text-gray-400">{label}</span>
+              </div>
+            )
+          ))}
+        </div>
+
+        <button
+          onClick={load}
+          className="px-6 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm text-gray-600 dark:text-gray-400"
+        >
+          再次检查
+        </button>
       </div>
     )
   }
@@ -96,7 +144,7 @@ export default function ReviewPage() {
     )
   }
 
-  const isWord = current?.type === 'word'
+  const isWord    = current?.type === 'word'
   const isGrammar = current?.type === 'grammar'
 
   function wordToWordInSentence(): WordInSentence | null {
@@ -107,27 +155,53 @@ export default function ReviewPage() {
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto flex flex-col min-h-[calc(100dvh-4rem)]">
-      {/* Header */}
-      <div className="mb-4">
+      {/* Header + Progress */}
+      <div className="mb-5">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">每日复习</h1>
-          <span className="text-sm text-gray-400 dark:text-gray-500">{done} / {total}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-400 dark:text-gray-500 tabular-nums">
+              {done} / {total}
+            </span>
+            {progress > 0 && (
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                progress >= 80 ? 'bg-green-100 text-green-700' :
+                progress >= 40 ? 'bg-amber-100 text-amber-700' :
+                'bg-red-100 text-red-700'
+              }`}>
+                {Math.round(progress)}%
+              </span>
+            )}
+          </div>
         </div>
-        <div className="h-1.5 bg-gray-200 dark:bg-[#2a2a2a] rounded-full overflow-hidden">
-          <div className="h-full bg-red-700 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div className="h-2 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+            style={{ width: `${progress}%` }}
+          />
         </div>
+        {/* Remaining label */}
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-right">
+          还剩 {queue.length} 项
+        </p>
       </div>
 
       {current && (
         <>
           <div className="flex-1 flex flex-col justify-center">
+            {/* Card — keyed by `done` so it re-mounts (triggers arrive anim) on each new card */}
             <button
-              onClick={() => !flipped && setFlipped(true)}
-              className="w-full bg-white dark:bg-[#1e1e1e] border-2 border-gray-200 dark:border-[#333] rounded-3xl p-8 text-center shadow-sm"
+              key={done}
+              onClick={() => !flipped && !exiting && setFlipped(true)}
+              className={`w-full bg-white dark:bg-[#1e1e1e] border-2 rounded-3xl p-8 text-center shadow-sm
+                ${flipped ? 'border-gray-300 dark:border-[#444]' : 'border-gray-200 dark:border-[#333]'}
+                ${exiting ? 'animate-card-leave' : 'animate-card-arrive'}`}
             >
               {/* Type badge */}
               <div className="mb-4">
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${isWord ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'}`}>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  isWord ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
+                }`}>
                   {isWord ? '单词' : '语法'}
                 </span>
               </div>
@@ -138,7 +212,13 @@ export default function ReviewPage() {
                   <div className="font-jp text-4xl font-bold text-gray-900 dark:text-gray-100" lang="ja">
                     {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
                   </div>
-                  <button onClick={e => { e.stopPropagation(); speaking ? stop() : speak((current as Extract<AnyReviewItem, { type: 'word' }>).word.word) }} className="text-gray-400 dark:text-gray-500 active:text-red-600">
+                  <button
+                    onClick={e => {
+                      e.stopPropagation()
+                      speaking ? stop() : speak((current as Extract<AnyReviewItem, { type: 'word' }>).word.word)
+                    }}
+                    className="text-gray-400 dark:text-gray-500 active:text-red-600"
+                  >
                     {speaking ? <Square size={16} fill="currentColor" /> : <Volume2 size={20} />}
                   </button>
                 </div>
@@ -153,8 +233,9 @@ export default function ReviewPage() {
                 <div className="text-sm text-gray-400 dark:text-gray-500 mt-4">点击翻转查看答案</div>
               )}
 
+              {/* Answer panel — animates in when flipped */}
               {flipped && (
-                <div className="mt-4 space-y-3 text-left">
+                <div className="mt-4 space-y-3 text-left animate-flip-answer">
                   <div className="h-px bg-gray-100 dark:bg-[#2a2a2a]" />
 
                   {isWord && (() => {
@@ -172,7 +253,10 @@ export default function ReviewPage() {
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{w.details_cache.examples[0].chinese}</div>
                           </div>
                         )}
-                        <button onClick={e => { e.stopPropagation(); setShowDetail(true) }} className="text-xs text-red-700 underline w-full text-center mt-1">
+                        <button
+                          onClick={e => { e.stopPropagation(); setShowDetail(true) }}
+                          className="text-xs text-red-700 underline w-full text-center mt-1"
+                        >
                           查看详情
                         </button>
                       </>
@@ -200,16 +284,18 @@ export default function ReviewPage() {
             </button>
           </div>
 
+          {/* Grade buttons */}
           {flipped && (
-            <div className="mt-6 grid grid-cols-4 gap-2 pb-24">
-              {GRADE_BUTTONS.map(({ grade, label, color }) => (
+            <div className="mt-6 grid grid-cols-4 gap-2 pb-24 animate-fade-in-down">
+              {GRADE_BUTTONS.map(({ grade, label, color, emoji }) => (
                 <button
                   key={grade}
                   onClick={() => handleGrade(grade)}
-                  disabled={submitting}
-                  className={`py-3 rounded-xl border font-medium text-sm ${color} disabled:opacity-50`}
+                  disabled={submitting || exiting}
+                  className={`py-3 rounded-xl border font-medium text-sm flex flex-col items-center gap-0.5 ${color} disabled:opacity-40 transition-opacity`}
                 >
-                  {label}
+                  <span className="text-base leading-none">{emoji}</span>
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
