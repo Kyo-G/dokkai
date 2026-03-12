@@ -35,7 +35,7 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
 }
 
 注意：
-- furigana 字段：只对汉字部分标注{漢字|よみ}，假名、符号原样保留，例如：{私|わたし}は{日本語|にほんご}が{好き|すき}です。
+- furigana 字段：只对原文中本身就是汉字的部分加标注，格式{漢字|よみ}；平假名、片假名、符号、数字一律原样保留，禁止把假名词转换成汉字再标注。例：{私|わたし}は{日本語|にほんご}が{好き|すき}です。（「は」「が」「です」不加标注）
 - structure 要覆盖整个句子，不能遗漏
 - grammar 只列出值得学习的语法点，可以为空数组
 - words 列出句中主要单词（排除简单助词如は、が、を、に）
@@ -71,7 +71,7 @@ function buildWordDetailsPrompt(word: string, reading: string, pos: string): str
   ]
 }
 
-注意：examples 中的 japanese 字段，只对汉字标注振假名，格式为{漢字|よみ}，假名和符号保持原样，例如：{彼女|かのじょ}は{日本語|にほんご}が{上手|じょうず}です。`
+注意：examples 中的 japanese 字段，只对原文本身是汉字的词标注{漢字|よみ}，平假名/片假名/符号原样保留，禁止把假名词改写成汉字再标注。`
 }
 
 function buildGrammarDetailsPrompt(pattern: string, meaning: string): string {
@@ -92,7 +92,7 @@ function buildGrammarDetailsPrompt(pattern: string, meaning: string): string {
   ]
 }
 
-注意：examples 中的 japanese 字段，只对汉字标注振假名，格式为{漢字|よみ}，假名和符号保持原样，例如：{彼女|かのじょ}は{日本語|にほんご}が{上手|じょうず}です。`
+注意：examples 中的 japanese 字段，只对原文本身是汉字的词标注{漢字|よみ}，平假名/片假名/符号原样保留，禁止把假名词改写成汉字再标注。`
 }
 
 function buildTestPrompt(): string {

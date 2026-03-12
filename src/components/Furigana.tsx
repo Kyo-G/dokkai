@@ -11,14 +11,20 @@ function parse(text: string): Segment[] {
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > last) {
-      segments.push({ text: text.slice(last, match.index) })
+      // Strip any leftover { } that didn't form a valid pattern
+      segments.push({ text: text.slice(last, match.index).replace(/[{}]/g, '') })
     }
-    segments.push({ text: match[1], reading: match[2] })
+    // Only add ruby if the base text actually contains kanji; otherwise show plain
+    if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(match[1])) {
+      segments.push({ text: match[1], reading: match[2] })
+    } else {
+      segments.push({ text: match[1] })
+    }
     last = match.index + match[0].length
   }
 
   if (last < text.length) {
-    segments.push({ text: text.slice(last) })
+    segments.push({ text: text.slice(last).replace(/[{}]/g, '') })
   }
 
   return segments
