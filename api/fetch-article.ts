@@ -1,5 +1,16 @@
-import { Readability } from '@mozilla/readability'
-import { JSDOM } from 'jsdom'
+import { parse } from 'node-html-parser'
+
+export const config = { runtime: 'edge' }
+
+function decode(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&[a-z]+;/g, '')
+}
 
 export default async function handler(req: Request) {
   const url = new URL(req.url).searchParams.get('url')
@@ -25,23 +36,50 @@ export default async function handler(req: Request) {
     return json({ error: `网络错误: ${String(e)}` }, 502)
   }
 
-  const dom = new JSDOM(html, { url: targetUrl.toString() })
-  const reader = new Readability(dom.window.document)
-  const article = reader.parse()
+  const root = parse(html)
 
-  if (!article?.textContent?.trim()) {
-    return json({ error: '无法提取正文，请手动粘贴内容' }, 422)
+  // Remove noise elements
+  for (const sel of ['script', 'style', 'nav', 'header', 'footer', 'aside', 'figure', 'noscript']) {
+    root.querySelectorAll(sel).forEach(el => el.remove())
   }
 
-  const content = article.textContent
-    .split('\n')
-    .map(line => line.replace(/\s+/g, ' ').trim())
-    .filter(line => line.length > 0 && /[\u3040-\u30ff\u4e00-\u9fff]/.test(line))
-    .join('\n')
+  // Title: og:title → <title>
+  const ogTitle = root.querySelector('meta[property="og:title"]')?.getAttribute('content')
+  const title = decode(ogTitle ?? root.querySelector('title')?.text ?? '').trim()
 
-  if (!content) return json({ error: '未找到日语内容' }, 422)
+  // Find main content area: <article> → <main> → common class patterns → body
+  const candidates = [
+    'article',
+    'main',
+    '[class*="article-body"]',
+    '[class*="articleBody"]',
+    '[class*="article__body"]',
+    '[class*="story-body"]',
+    '[class*="entry-content"]',
+    '[class*="post-body"]',
+    '[class*="article-content"]',
+    '[class*="NewsArticle"]',
+    '[class*="article_body"]',
+  ]
 
-  return json({ title: article.title ?? '', content })
+  let container = root
+  for (const sel of candidates) {
+    const el = root.querySelector(sel)
+    if (el) { container = el as typeof root; break }
+  }
+
+  // Extract paragraphs from the chosen container
+  const lines: string[] = []
+  for (const p of container.querySelectorAll('p')) {
+    const text = decode(p.text).replace(/\s+/g, ' ').trim()
+    if (text.length > 5 && /[\u3040-\u30ff\u4e00-\u9fff]/.test(text)) {
+      lines.push(text)
+    }
+  }
+
+  if (lines.length === 0) return json({ error: '未找到日语正文，请手动粘贴内容' }, 422)
+
+  return json({ title, content: lines.join('\n') })
 }
 
 function json(data: unknown, status = 200) {
