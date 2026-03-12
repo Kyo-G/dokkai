@@ -1,6 +1,25 @@
 import { useCallback, useRef, useState } from 'react'
 import { getAudioUrl } from '../lib/audioCache'
 
+/** getVoices() is async on first call — wait for voiceschanged if empty */
+function resolveJapaneseVoice(): Promise<SpeechSynthesisVoice | null> {
+  const synth = window.speechSynthesis
+  if (!synth) return Promise.resolve(null)
+
+  const voices = synth.getVoices()
+  const ja = voices.find(v => v.lang.startsWith('ja'))
+  if (ja) return Promise.resolve(ja)
+
+  // Voices not yet loaded; wait up to 1 s for voiceschanged
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(null), 1000)
+    synth.addEventListener('voiceschanged', () => {
+      clearTimeout(timer)
+      resolve(synth.getVoices().find(v => v.lang.startsWith('ja')) ?? null)
+    }, { once: true })
+  })
+}
+
 export function useSpeech() {
   const [speaking, setSpeaking] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -14,8 +33,7 @@ export function useSpeech() {
     window.speechSynthesis?.cancel()
 
     // Prefer local Japanese voice if available
-    const voices = window.speechSynthesis?.getVoices() ?? []
-    const jaVoice = voices.find(v => v.lang.startsWith('ja'))
+    const jaVoice = await resolveJapaneseVoice()
     if (jaVoice) {
       const utter = new SpeechSynthesisUtterance(text)
       utter.lang = 'ja-JP'

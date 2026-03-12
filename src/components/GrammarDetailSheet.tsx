@@ -4,6 +4,7 @@ import type { GrammarDetails } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getGrammarDetails } from '../lib/ai'
 import { saveGrammarDetails } from '../lib/db'
+import Furigana from './Furigana'
 
 interface GrammarLike {
   id?: string
@@ -113,7 +114,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
                   <div className="space-y-3">
                     {details.examples.map((ex, i) => (
                       <div key={i} className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3">
-                        <div className="font-jp text-gray-900 dark:text-gray-100 leading-relaxed" lang="ja">{ex.japanese}</div>
+                        <Furigana text={ex.japanese} className="font-jp text-gray-900 dark:text-gray-100 leading-loose" />
                         <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">{ex.chinese}</div>
                       </div>
                     ))}

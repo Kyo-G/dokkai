@@ -11,6 +11,7 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
 
 请返回如下JSON结构（不要有任何多余的文字，只返回JSON）：
 {
+  "furigana": "整个句子，对所有汉字标注振假名，格式为{漢字|よみ}，假名和符号保持原样",
   "structure": [
     {"text": "句子片段", "role": "主语/谓语/宾语/修饰成分/补语/连词 等"}
   ],
@@ -33,6 +34,7 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
 }
 
 注意：
+- furigana 字段：只对汉字部分标注{漢字|よみ}，假名、符号原样保留，例如：{私|わたし}は{日本語|にほんご}が{好き|すき}です。
 - structure 要覆盖整个句子，不能遗漏
 - grammar 只列出值得学习的语法点，可以为空数组
 - words 列出句中主要单词（排除简单助词如は、が、を、に）`
@@ -52,19 +54,21 @@ function buildWordDetailsPrompt(word: string, reading: string, pos: string): str
   "usage": "用法说明，包括常见搭配和注意事项",
   "examples": [
     {
-      "japanese": "日语例句（带假名注音）",
+      "japanese": "日语例句，对汉字用{漢字|よみ}标注振假名",
       "chinese": "中文翻译"
     },
     {
-      "japanese": "日语例句2",
+      "japanese": "日语例句2，对汉字用{漢字|よみ}标注振假名",
       "chinese": "中文翻译2"
     },
     {
-      "japanese": "日语例句3",
+      "japanese": "日语例句3，对汉字用{漢字|よみ}标注振假名",
       "chinese": "中文翻译3"
     }
   ]
-}`
+}
+
+注意：examples 中的 japanese 字段，只对汉字标注振假名，格式为{漢字|よみ}，假名和符号保持原样，例如：{彼女|かのじょ}は{日本語|にほんご}が{上手|じょうず}です。`
 }
 
 function buildGrammarDetailsPrompt(pattern: string, meaning: string): string {
@@ -79,11 +83,13 @@ function buildGrammarDetailsPrompt(pattern: string, meaning: string): string {
   "usage": "详细的用法说明，包括接续方式和注意事项",
   "nuance": "语感/语气说明，与近似语法的区别",
   "examples": [
-    {"japanese": "例句1（带假名）", "chinese": "中文翻译1"},
-    {"japanese": "例句2（带假名）", "chinese": "中文翻译2"},
-    {"japanese": "例句3（带假名）", "chinese": "中文翻译3"}
+    {"japanese": "例句1，对汉字用{漢字|よみ}标注振假名", "chinese": "中文翻译1"},
+    {"japanese": "例句2，对汉字用{漢字|よみ}标注振假名", "chinese": "中文翻译2"},
+    {"japanese": "例句3，对汉字用{漢字|よみ}标注振假名", "chinese": "中文翻译3"}
   ]
-}`
+}
+
+注意：examples 中的 japanese 字段，只对汉字标注振假名，格式为{漢字|よみ}，假名和符号保持原样，例如：{彼女|かのじょ}は{日本語|にほんご}が{上手|じょうず}です。`
 }
 
 function buildTestPrompt(): string {

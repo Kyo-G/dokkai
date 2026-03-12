@@ -50,3 +50,19 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+ruby {
+  ruby-align: center;
+}
+
+rt {
+  font-size: 0.55em;
+  line-height: 1;
+  color: #888;
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  font-weight: normal;
+}
+
+.dark rt {
+  color: #666;
+}

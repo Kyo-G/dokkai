@@ -7,6 +7,7 @@ import { useSettings } from '../hooks/useSettings'
 import { useSpeech } from '../hooks/useSpeech'
 import WordDetailSheet from './WordDetailSheet'
 import GrammarDetailSheet from './GrammarDetailSheet'
+import Furigana from './Furigana'
 
 const ROLE_COLORS: Record<string, string> = {
   '主语': 'bg-blue-100 text-blue-800',
@@ -30,9 +31,10 @@ interface Props {
   articleId: string
   onAnalyzed: (id: string, analysis: SentenceAnalysis) => void
   onExpand?: (content: string | null) => void
+  showFurigana?: boolean
 }
 
-export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand }: Props) {
+export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand, showFurigana }: Props) {
   const { settings } = useSettings()
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -110,8 +112,11 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
         {/* Sentence row */}
         <div className="px-4 py-4 flex items-start gap-3">
           <button onClick={handleExpand} className="flex-1 text-left flex items-start gap-3">
-            <div className="font-jp text-base leading-relaxed text-gray-900 dark:text-gray-100 flex-1" lang="ja">
-              {sentence.content}
+            <div className="font-jp text-base text-gray-900 dark:text-gray-100 flex-1" lang="ja">
+              {showFurigana && analysis?.furigana
+                ? <Furigana text={analysis.furigana} className="leading-loose" />
+                : <span className="leading-relaxed">{sentence.content}</span>
+              }
             </div>
             <div className="mt-1 shrink-0 text-gray-400 dark:text-gray-500">
               {loading
@@ -209,8 +214,10 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                       <div key={i} className="bg-gray-50 dark:bg-[#252525] active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2">
                         <button onClick={() => setSelectedWord(w)} className="flex-1 text-left">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">{w.word}</span>
-                            <span className="text-gray-400 dark:text-gray-500 text-sm" lang="ja">{w.reading}</span>
+                            <ruby className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">
+                              {w.word}
+                              <rt className="text-[10px] font-normal text-gray-400 dark:text-gray-500">{w.reading}</rt>
+                            </ruby>
                             <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
                           </div>
                           <div className="text-gray-600 dark:text-gray-400 text-sm mt-0.5">{w.meaning}</div>

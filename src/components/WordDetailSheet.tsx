@@ -5,6 +5,7 @@ import { useSettings } from '../hooks/useSettings'
 import { getWordDetails } from '../lib/ai'
 import { addWord, saveWordDetails } from '../lib/db'
 import { useSpeech } from '../hooks/useSpeech'
+import Furigana from './Furigana'
 
 interface Props {
   wordInfo: WordInSentence
@@ -138,7 +139,7 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
                   <div className="space-y-3">
                     {details.examples.map((ex, i) => (
                       <div key={i} className="bg-gray-50 dark:bg-[#252525] rounded-xl p-3">
-                        <div className="font-jp text-gray-900 dark:text-gray-100 leading-relaxed" lang="ja">{ex.japanese}</div>
+                        <Furigana text={ex.japanese} className="font-jp text-gray-900 dark:text-gray-100 leading-loose" />
                         <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">{ex.chinese}</div>
                       </div>
                     ))}

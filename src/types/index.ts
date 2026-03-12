@@ -29,6 +29,7 @@ export interface Sentence {
 }
 
 export interface SentenceAnalysis {
+  furigana?: string  // 完整句子，含 {漢字|よみ} 标注
   structure: StructurePart[]
   grammar: GrammarPoint[]
   words: WordInSentence[]

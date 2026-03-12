@@ -25,6 +25,7 @@ export default function ArticleReadPage() {
   const [error, setError] = useState('')
   const [highlightId, setHighlightId] = useState<string | null>(targetSentenceId)
   const [expandedSentence, setExpandedSentence] = useState<string | null>(null)
+  const [showFurigana, setShowFurigana] = useState(false)
 
   useEffect(() => {
     if (id) load(id)
@@ -103,6 +104,17 @@ export default function ArticleReadPage() {
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">点击句子展开分析</p>
             </div>
+            <button
+              onClick={() => setShowFurigana(v => !v)}
+              className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-medium font-jp border transition-colors ${
+                showFurigana
+                  ? 'bg-red-700 text-white border-red-700'
+                  : 'border-gray-200 dark:border-[#444] text-gray-500 dark:text-gray-400'
+              }`}
+              title="振り仮名の表示切り替え"
+            >
+              振
+            </button>
           </div>
         </div>
         {expandedSentence && (
@@ -130,6 +142,7 @@ export default function ArticleReadPage() {
                 articleId={article.id}
                 onAnalyzed={handleAnalyzed}
                 onExpand={content => setExpandedSentence(content)}
+                showFurigana={showFurigana}
               />
             </div>
           ))
