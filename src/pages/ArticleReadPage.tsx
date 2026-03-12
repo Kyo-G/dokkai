@@ -8,6 +8,7 @@ import SentenceItem from '../components/SentenceItem'
 import Furigana from '../components/Furigana'
 import { analyzeSentence } from '../lib/ai'
 import { useSettings } from '../hooks/useSettings'
+import { splitIntoSentences } from '../lib/sentences'
 
 const LEVEL_COLORS: Record<string, string> = {
   N5: 'bg-green-100 text-green-700',
@@ -18,6 +19,20 @@ const LEVEL_COLORS: Record<string, string> = {
 }
 
 type Mode = 'read' | 'study'
+
+function groupByParagraph(content: string, sentences: Sentence[]): Sentence[][] {
+  const paragraphs = content.split('\n').filter(p => p.trim().length > 0)
+  const groups: Sentence[][] = []
+  let idx = 0
+  for (const para of paragraphs) {
+    const count = splitIntoSentences(para).length
+    groups.push(sentences.slice(idx, idx + count))
+    idx += count
+  }
+  // Leftover sentences (if any) go into the last group
+  if (idx < sentences.length) groups.push(sentences.slice(idx))
+  return groups.filter(g => g.length > 0)
+}
 
 export default function ArticleReadPage() {
   const { id } = useParams<{ id: string }>()
@@ -204,22 +219,24 @@ export default function ArticleReadPage() {
         <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-16">暂无句子数据</p>
       ) : mode === 'read' ? (
         /* ── 通读模式 ── */
-        <div className="px-5 py-8 pb-24">
-          <p className="font-jp text-[17px] leading-[2.2] text-gray-900 dark:text-gray-100" lang="ja">
-            {sentences.map(s => (
-              <button
-                key={s.id}
-                ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
-                onClick={() => switchToStudy(s.id)}
-                className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
-                  ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
-              >
-                {showFurigana && s.analysis_cache?.furigana
-                  ? <Furigana text={s.analysis_cache.furigana} />
-                  : s.content}
-              </button>
-            ))}
-          </p>
+        <div className="px-5 py-8 pb-24 space-y-5">
+          {groupByParagraph(article.content, sentences).map((group, gi) => (
+            <p key={gi} className="font-jp text-[17px] leading-[2.2] text-gray-900 dark:text-gray-100" lang="ja">
+              {group.map(s => (
+                <button
+                  key={s.id}
+                  ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
+                  onClick={() => switchToStudy(s.id)}
+                  className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
+                    ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
+                >
+                  {showFurigana && s.analysis_cache?.furigana
+                    ? <Furigana text={s.analysis_cache.furigana} />
+                    : s.content}
+                </button>
+              ))}
+            </p>
+          ))}
         </div>
       ) : (
         /* ── 精读模式 ── */
