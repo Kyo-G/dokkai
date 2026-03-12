@@ -137,6 +137,37 @@ export default function SettingsPage() {
           <p className="text-red-500 text-xs text-center">{testError}</p>
         )}
       </div>
+      {/* JLPT level filter */}
+      <div className="space-y-2">
+        <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">我的 JLPT 水平</div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">低于此等级的单词将在句子分析中自动隐藏</p>
+        <div className="flex gap-2">
+          {(['', 'N5', 'N4', 'N3', 'N2', 'N1'] as const).map(level => (
+            <button
+              key={level}
+              onClick={() => updateSettings({ userLevel: level })}
+              className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors
+                ${settings.userLevel === level
+                  ? 'bg-red-700 text-white border-red-700'
+                  : 'border-gray-200 dark:border-[#333] text-gray-500 dark:text-gray-400'}`}
+            >
+              {level || '不限'}
+            </button>
+          ))}
+        </div>
+        {settings.userLevel && (
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            将隐藏 {
+              settings.userLevel === 'N5' ? '无（N5已是最低级）' :
+              settings.userLevel === 'N4' ? 'N5' :
+              settings.userLevel === 'N3' ? 'N5、N4' :
+              settings.userLevel === 'N2' ? 'N5、N4、N3' :
+              'N5、N4、N3、N2'
+            } 级单词
+          </p>
+        )}
+      </div>
+
       {/* TTS diagnostic */}
       <div className="space-y-2">
         <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">语音诊断</div>

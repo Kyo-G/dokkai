@@ -29,7 +29,8 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
       "reading": "假名读音",
       "pos": "词性（名词/动词/形容词/副词/助词 等）",
       "meaning": "中文释义",
-      "pitch": 0
+      "pitch": 0,
+      "jlpt": "N3"
     }
   ]
 }
@@ -39,7 +40,8 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
 - structure 要覆盖整个句子，不能遗漏
 - grammar 只列出值得学习的语法点，可以为空数组
 - words 列出句中主要单词（排除简单助词如は、が、を、に）
-- pitch 为东京方言音调核位置：0=平板型（无下降），1=头高型，2及以上=中高型/尾高型，填整数`
+- pitch 为东京方言音调核位置：0=平板型（无下降），1=头高型，2及以上=中高型/尾高型，填整数
+- jlpt 填该单词对应的 JLPT 等级（N5/N4/N3/N2/N1），不确定时填空字符串`
 }
 
 function buildWordDetailsPrompt(word: string, reading: string, pos: string): string {

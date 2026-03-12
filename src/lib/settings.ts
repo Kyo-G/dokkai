@@ -8,6 +8,7 @@ export const defaultSettings: Settings = {
   openaiKey: '',
   geminiKey: '',
   deepseekKey: '',
+  userLevel: '',
 }
 
 export function loadSettings(): Settings {

@@ -9,6 +9,18 @@ import WordDetailSheet from './WordDetailSheet'
 import GrammarDetailSheet from './GrammarDetailSheet'
 import Furigana from './Furigana'
 
+const JLPT_RANK: Record<string, number> = { N5: 5, N4: 4, N3: 3, N2: 2, N1: 1 }
+
+// Returns true if the word should be visible given the user's level
+function isWordVisible(wordJlpt: string | undefined, userLevel: string): boolean {
+  if (!userLevel) return true           // no filter set
+  if (!wordJlpt) return true            // unknown level → always show
+  const wordRank = JLPT_RANK[wordJlpt]
+  const userRank = JLPT_RANK[userLevel]
+  if (!wordRank || !userRank) return true
+  return wordRank <= userRank           // show only words harder than user level
+}
+
 const ROLE_COLORS: Record<string, string> = {
   '主语': 'bg-blue-100 text-blue-800',
   '谓语': 'bg-red-100 text-red-800',
@@ -203,11 +215,21 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             )}
 
             {/* Words */}
-            {analysis.words?.length > 0 && (
+            {analysis.words?.length > 0 && (() => {
+              const visible = analysis.words.filter(w => isWordVisible(w.jlpt, settings.userLevel))
+              const hiddenCount = analysis.words.length - visible.length
+              return (
               <div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">单词列表</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2 flex items-center gap-2">
+                  单词列表
+                  {hiddenCount > 0 && (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#333] rounded px-1.5 py-0.5 font-normal">
+                      已隐藏 {hiddenCount} 个简单词
+                    </span>
+                  )}
+                </div>
                 <div className="space-y-1">
-                  {analysis.words.map((w, i) => {
+                  {visible.map((w, i) => {
                     const wordSaved = savedWords.has(w.word)
                     const wordSaving = savingWord === w.word
                     return (
@@ -221,6 +243,11 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                             {w.pitch !== undefined && (
                               <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded px-1 py-0.5 leading-none">
                                 {w.pitch}
+                              </span>
+                            )}
+                            {w.jlpt && (
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#333] rounded px-1.5 py-0.5 leading-none">
+                                {w.jlpt}
                               </span>
                             )}
                             <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
@@ -248,7 +275,8 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                   })}
                 </div>
               </div>
-            )}
+              )
+            })()}
           </div>
         )}
       </div>

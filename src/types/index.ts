@@ -8,6 +8,7 @@ export interface Settings {
   openaiKey: string
   geminiKey: string
   deepseekKey: string
+  userLevel: ArticleLevel  // 用户自身 JLPT 水平，低于此级别的单词自动隐藏
 }
 
 export interface Article {
@@ -54,6 +55,7 @@ export interface WordInSentence {
   pos: string // 词性
   meaning: string
   pitch?: number // 音调核位置，0=平板型
+  jlpt?: string  // N5/N4/N3/N2/N1
 }
 
 export interface Word {
