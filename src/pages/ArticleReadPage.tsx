@@ -219,24 +219,27 @@ export default function ArticleReadPage() {
         <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-16">暂无句子数据</p>
       ) : mode === 'read' ? (
         /* ── 通读模式 ── */
-        <div className="px-5 py-8 pb-24 space-y-5">
-          {groupByParagraph(article.content, sentences).map((group, gi) => (
-            <p key={gi} className="font-jp text-[17px] leading-[2.2] text-gray-900 dark:text-gray-100" lang="ja">
-              {group.map(s => (
-                <button
-                  key={s.id}
-                  ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
-                  onClick={() => switchToStudy(s.id)}
-                  className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
-                    ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
-                >
-                  {showFurigana && s.analysis_cache?.furigana
-                    ? <Furigana text={s.analysis_cache.furigana} />
-                    : s.content}
-                </button>
-              ))}
-            </p>
-          ))}
+        <div className="px-5 py-8 pb-24">
+          <div className="font-jp text-[17px] leading-[2.2]" lang="ja">
+            {groupByParagraph(article.content, sentences).map((group, gi) => (
+              <span key={gi}>
+                {gi > 0 && <br />}
+                {group.map(s => (
+                  <button
+                    key={s.id}
+                    ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
+                    onClick={() => switchToStudy(s.id)}
+                    className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
+                      ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
+                  >
+                    {showFurigana && s.analysis_cache?.furigana
+                      ? <Furigana text={s.analysis_cache.furigana} />
+                      : s.content}
+                  </button>
+                ))}
+              </span>
+            ))}
+          </div>
         </div>
       ) : (
         /* ── 精读模式 ── */
