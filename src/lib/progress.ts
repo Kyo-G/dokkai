@@ -2,6 +2,7 @@ interface ArticleProgress {
   readIds: string[]
   total: number
   lastReadId: string | null
+  lastMode?: 'read' | 'study'
 }
 
 const empty = (): ArticleProgress => ({ readIds: [], total: 0, lastReadId: null })
@@ -19,6 +20,19 @@ export function markSentenceRead(articleId: string, sentenceId: string, total: n
   if (!p.readIds.includes(sentenceId)) p.readIds.push(sentenceId)
   p.lastReadId = sentenceId
   p.total = total
+  try { localStorage.setItem(key(articleId), JSON.stringify(p)) } catch {}
+}
+
+export function saveLastPosition(articleId: string, sentenceId: string, mode: 'read' | 'study'): void {
+  const p = getProgress(articleId)
+  p.lastReadId = sentenceId
+  p.lastMode = mode
+  try { localStorage.setItem(key(articleId), JSON.stringify(p)) } catch {}
+}
+
+export function saveMode(articleId: string, mode: 'read' | 'study'): void {
+  const p = getProgress(articleId)
+  p.lastMode = mode
   try { localStorage.setItem(key(articleId), JSON.stringify(p)) } catch {}
 }
 

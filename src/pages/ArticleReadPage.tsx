@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { getArticle, getSentences, saveSentenceAnalysis, getVocabIndex } from '../lib/db'
-import { getProgress, markSentenceRead } from '../lib/progress'
+import { getProgress, markSentenceRead, saveLastPosition, saveMode } from '../lib/progress'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
 import Furigana from '../components/Furigana'
@@ -53,6 +53,7 @@ export default function ArticleReadPage() {
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
   const [mode, setMode] = useState<Mode>('read')
   const [jumpToId, setJumpToId] = useState<string | null>(null)
+  const lastSeenRef = useRef<string | null>(null)
   const [vocabIndex, setVocabIndex] = useState<Map<string, number>>(new Map())
 
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function ArticleReadPage() {
 
       const prog = getProgress(articleId)
       setReadIds(new Set(prog.readIds))
+      if (prog.lastMode && !targetSentenceId) setMode(prog.lastMode)
 
       const scrollTo = targetSentenceId ?? prog.lastReadId
       if (scrollTo) {
@@ -132,6 +134,46 @@ export default function ArticleReadPage() {
       setJumpToId(null)
     }
   }, [mode, jumpToId])
+
+  // Save mode whenever it changes (after initial load)
+  useEffect(() => {
+    if (!id || loading) return
+    saveMode(id, mode)
+    // When switching away from 通读, persist last seen sentence
+    if (mode !== 'read' && lastSeenRef.current) {
+      saveLastPosition(id, lastSeenRef.current, 'read')
+    }
+  }, [mode])
+
+  // Track last visible sentence in 通読 using IntersectionObserver
+  useEffect(() => {
+    if (mode !== 'read' || sentences.length === 0) return
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const sid = (entry.target as HTMLElement).dataset.sid
+          if (sid) lastSeenRef.current = sid
+        }
+      }
+    }, { rootMargin: '-20% 0px -60% 0px' })
+    // Observe after sentences render
+    const t = setTimeout(() => {
+      Object.values(sentenceRefs.current).forEach(el => el && observer.observe(el))
+    }, 100)
+    return () => { clearTimeout(t); observer.disconnect() }
+  }, [mode, sentences.length])
+
+  // Save 通読 position on page hide (tab switch / navigate away)
+  useEffect(() => {
+    if (!id) return
+    const save = () => {
+      if (mode === 'read' && lastSeenRef.current) {
+        saveLastPosition(id, lastSeenRef.current, 'read')
+      }
+    }
+    document.addEventListener('visibilitychange', save)
+    return () => { save(); document.removeEventListener('visibilitychange', save) }
+  }, [id, mode])
 
   function switchToStudy(sentenceId: string) {
     setMode('study')
@@ -231,6 +273,7 @@ export default function ArticleReadPage() {
                   <button
                     key={s.id}
                     ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
+                    data-sid={s.id}
                     onClick={() => switchToStudy(s.id)}
                     className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
                       ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
