@@ -242,7 +242,11 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
 
             {/* Words */}
             {analysis.words?.length > 0 && (() => {
-              const visible = analysis.words.filter(w => isWordVisible(w.jlpt, settings.userLevel))
+              const visible = analysis.words.filter(w =>
+                isWordVisible(w.jlpt, settings.userLevel) &&
+                // Skip punctuation-only tokens
+                /[\u3040-\u9fff\uff21-\uff3a\uff41-\uff5a\u0041-\u007a]/.test(w.word)
+              )
               const hiddenCount = analysis.words.length - visible.length
               return (
               <div>
