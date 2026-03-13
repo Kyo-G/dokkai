@@ -8,7 +8,7 @@ import { useSpeech } from '../hooks/useSpeech'
 import WordDetailSheet from './WordDetailSheet'
 import GrammarDetailSheet from './GrammarDetailSheet'
 import Furigana from './Furigana'
-import VocabText, { vocabCardClass } from './VocabText'
+import { vocabCardClass } from './VocabText'
 
 const JLPT_RANK: Record<string, number> = { N5: 5, N4: 4, N3: 3, N2: 2, N1: 1 }
 
@@ -141,13 +141,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             <div className="font-jp text-base text-gray-900 dark:text-gray-100 flex-1" lang="ja">
               {showFurigana && analysis?.furigana
                 ? <Furigana text={analysis.furigana} className="leading-loose" />
-                : <VocabText
-                    text={sentence.content}
-                    analysisWords={analysis?.words}
-                    vocabIndex={vocabIndex ?? new Map()}
-                    className="leading-relaxed"
-                    lang="ja"
-                  />
+                : <span className="leading-relaxed">{sentence.content}</span>
               }
             </div>
             <div className="mt-1 shrink-0 text-gray-400 dark:text-gray-500">

@@ -6,7 +6,6 @@ import { getProgress, markSentenceRead } from '../lib/progress'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
 import Furigana from '../components/Furigana'
-import VocabText from '../components/VocabText'
 import { analyzeSentence } from '../lib/ai'
 import { useSettings } from '../hooks/useSettings'
 import { splitIntoSentences } from '../lib/sentences'
@@ -238,11 +237,7 @@ export default function ArticleReadPage() {
                   >
                     {showFurigana && s.analysis_cache?.furigana
                       ? <Furigana text={s.analysis_cache.furigana} />
-                      : <VocabText
-                          text={s.content}
-                          analysisWords={s.analysis_cache?.words}
-                          vocabIndex={vocabIndex}
-                        />
+                      : s.content
                     }
                   </button>
                 ))}
