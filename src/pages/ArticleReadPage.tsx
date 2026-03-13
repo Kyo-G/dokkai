@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { getArticle, getSentences, saveSentenceAnalysis, getVocabIndex } from '../lib/db'
-import { getProgress, markSentenceRead, saveLastPosition, saveMode } from '../lib/progress'
+import { getProgress, markSentenceRead, saveReadPosition, saveMode } from '../lib/progress'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
 import Furigana from '../components/Furigana'
@@ -139,9 +139,9 @@ export default function ArticleReadPage() {
   useEffect(() => {
     if (!id || loading) return
     saveMode(id, mode)
-    // When switching away from 通读, persist last seen sentence
+    // When switching away from 通读, persist last seen sentence position
     if (mode !== 'read' && lastSeenRef.current) {
-      saveLastPosition(id, lastSeenRef.current, 'read')
+      saveReadPosition(id, lastSeenRef.current)
     }
   }, [mode])
 
@@ -168,7 +168,7 @@ export default function ArticleReadPage() {
     if (!id) return
     const save = () => {
       if (mode === 'read' && lastSeenRef.current) {
-        saveLastPosition(id, lastSeenRef.current, 'read')
+        saveReadPosition(id, lastSeenRef.current)
       }
     }
     document.addEventListener('visibilitychange', save)

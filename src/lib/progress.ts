@@ -23,10 +23,9 @@ export function markSentenceRead(articleId: string, sentenceId: string, total: n
   try { localStorage.setItem(key(articleId), JSON.stringify(p)) } catch {}
 }
 
-export function saveLastPosition(articleId: string, sentenceId: string, mode: 'read' | 'study'): void {
+export function saveReadPosition(articleId: string, sentenceId: string): void {
   const p = getProgress(articleId)
   p.lastReadId = sentenceId
-  p.lastMode = mode
   try { localStorage.setItem(key(articleId), JSON.stringify(p)) } catch {}
 }
 
