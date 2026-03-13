@@ -304,6 +304,35 @@ export async function submitGrammarReview(
   if (error) throw error
 }
 
+/**
+ * Find the user's own analyzed sentences that contain this word.
+ * Uses a substring match on content (works for Japanese, no spaces).
+ */
+export async function getUserExamplesForWord(
+  word: string
+): Promise<{ content: string; furigana?: string; articleTitle: string; articleId: string }[]> {
+  const { data, error } = await supabase
+    .from('sentences')
+    .select('content, analysis_cache, article_id, articles(title)')
+    .ilike('content', `%${word}%`)
+    .not('analysis_cache', 'is', null)
+    .limit(15)
+  if (error) throw error
+
+  return (data || [])
+    .filter(s =>
+      (s.analysis_cache as { words?: { word: string }[] } | null)
+        ?.words?.some(w => w.word === word)
+    )
+    .slice(0, 4)
+    .map(s => ({
+      content:      s.content,
+      furigana:     (s.analysis_cache as { furigana?: string } | null)?.furigana,
+      articleTitle: (s as unknown as { articles?: { title: string } | null }).articles?.title ?? '未知文章',
+      articleId:    s.article_id,
+    }))
+}
+
 export async function submitReview(
   recordId: string,
   currentInterval: number,

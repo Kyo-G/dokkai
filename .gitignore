@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Generated dictionary file (build with: npm run build:dict)
+public/dict/words.json

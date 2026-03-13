@@ -9,6 +9,11 @@ import ReviewPage from './pages/ReviewPage'
 import SettingsPage from './pages/SettingsPage'
 import { getDueCount } from './lib/db'
 import { useDarkMode } from './hooks/useDarkMode'
+import { initDict } from './lib/dict'
+
+// Kick off dictionary download in the background on app load.
+// Cached in IndexedDB after first download, ~10-40 MB one-time.
+initDict()
 
 function AppShell() {
   const location = useLocation()
