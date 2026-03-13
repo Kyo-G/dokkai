@@ -9,6 +9,7 @@ import WordDetailSheet from './WordDetailSheet'
 import GrammarDetailSheet from './GrammarDetailSheet'
 import Furigana from './Furigana'
 import { vocabCardClass } from './VocabText'
+import SwipeableRow from './SwipeableRow'
 
 const JLPT_RANK: Record<string, number> = { N5: 5, N4: 4, N3: 3, N2: 2, N1: 1 }
 
@@ -263,7 +264,12 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                     const wordSaved = savedWords.has(w.word)
                     const wordSaving = savingWord === w.word
                     return (
-                      <div key={i} className={`${vocabIndex?.has(w.word) ? vocabCardClass(vocabIndex.get(w.word)!) : 'bg-gray-50 dark:bg-[#252525]'} active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2`}>
+                      <SwipeableRow
+                        key={`sw-${i}`}
+                        onSwipeRight={wordSaved ? undefined : () => handleQuickSaveWord(w)}
+                        rightAction={wordSaved ? undefined : { bg: 'bg-green-500', icon: <BookmarkPlus size={20} className="text-white" /> }}
+                      >
+                      <div className={`${vocabIndex?.has(w.word) ? vocabCardClass(vocabIndex.get(w.word)!) : 'bg-gray-50 dark:bg-[#252525]'} active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2`}>
                         <button onClick={() => setSelectedWord(w)} className="flex-1 text-left">
                           <div className="flex items-center gap-2 flex-wrap">
                             <ruby className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">
@@ -288,19 +294,17 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                           <button onClick={() => speak(w.word)} className="p-1 text-gray-300 dark:text-gray-600 active:text-gray-500">
                             <Volume2 size={15} />
                           </button>
-                          <button
-                            onClick={() => !wordSaved && handleQuickSaveWord(w)}
-                            disabled={wordSaving}
-                          >
+                          <div>
                             {wordSaving
                               ? <Loader2 size={15} className="animate-spin text-gray-300" />
                               : wordSaved
                                 ? <Check size={15} className="text-green-500" />
                                 : <BookmarkPlus size={15} className="text-gray-300" />
                             }
-                          </button>
+                          </div>
                         </div>
                       </div>
+                      </SwipeableRow>
                     )
                   })}
                 </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BookMarked, Trash2, ChevronRight, Loader2, Download, ExternalLink } from 'lucide-react'
+import SwipeableRow from '../components/SwipeableRow'
 import { getWords, deleteWord, getGrammars, deleteGrammar } from '../lib/db'
 import type { Word, WordInSentence, SavedGrammar } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
@@ -157,35 +158,37 @@ export default function VocabPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <button onClick={() => setSelectedWord(word)} className="flex-1 text-left flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-jp font-medium text-gray-900 dark:text-gray-100" lang="ja">{word.word}</span>
-                          <span className="text-gray-400 dark:text-gray-500 text-sm" lang="ja">{word.reading}</span>
-                          <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#2a2a2a] rounded px-1.5 py-0.5 shrink-0">{word.pos}</span>
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{word.meaning}</div>
-                        {word.article_title && (
-                          <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
-                            来自：{word.article_title}
-                            {word.article_id && (
-                              <button
-                                onClick={e => { e.stopPropagation(); navigate(`/article/${word.article_id}${word.sentence_id ? `?sentence=${word.sentence_id}` : ''}`) }}
-                                className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
-                              >
-                                <ExternalLink size={11} />
-                              </button>
-                            )}
+                  <SwipeableRow
+                    onSwipeLeft={() => setDeleteId(word.id)}
+                    leftAction={{ bg: 'bg-red-500', icon: <Trash2 size={20} className="text-white" /> }}
+                  >
+                    <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] px-4 py-3 flex items-center gap-3">
+                      <button onClick={() => setSelectedWord(word)} className="flex-1 text-left flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-jp font-medium text-gray-900 dark:text-gray-100" lang="ja">{word.word}</span>
+                            <span className="text-gray-400 dark:text-gray-500 text-sm" lang="ja">{word.reading}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#2a2a2a] rounded px-1.5 py-0.5 shrink-0">{word.pos}</span>
                           </div>
-                        )}
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
-                    </button>
-                    <button onClick={() => setDeleteId(word.id)} className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0">
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{word.meaning}</div>
+                          {word.article_title && (
+                            <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
+                              来自：{word.article_title}
+                              {word.article_id && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); navigate(`/article/${word.article_id}${word.sentence_id ? `?sentence=${word.sentence_id}` : ''}`) }}
+                                  className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
+                                >
+                                  <ExternalLink size={11} />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
+                      </button>
+                    </div>
+                  </SwipeableRow>
                 )}
               </div>
             ))}
@@ -211,37 +214,39 @@ export default function VocabPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <button onClick={() => setSelectedGrammar(g)} className="flex-1 text-left flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-jp font-medium text-amber-900 dark:text-amber-300" lang="ja">{g.pattern}</span>
-                          {g.jlpt && (
-                            <span className="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium shrink-0">{g.jlpt}</span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{g.meaning}</div>
-                        {g.usage && <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1">{g.usage}</div>}
-                        {g.article_title && (
-                          <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
-                            来自：{g.article_title}
-                            {g.article_id && (
-                              <button
-                                onClick={e => { e.stopPropagation(); navigate(`/article/${g.article_id}${g.sentence_id ? `?sentence=${g.sentence_id}` : ''}`) }}
-                                className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
-                              >
-                                <ExternalLink size={11} />
-                              </button>
+                  <SwipeableRow
+                    onSwipeLeft={() => setDeleteId(g.id)}
+                    leftAction={{ bg: 'bg-red-500', icon: <Trash2 size={20} className="text-white" /> }}
+                  >
+                    <div className="bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] px-4 py-3 flex items-center gap-3">
+                      <button onClick={() => setSelectedGrammar(g)} className="flex-1 text-left flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-jp font-medium text-amber-900 dark:text-amber-300" lang="ja">{g.pattern}</span>
+                            {g.jlpt && (
+                              <span className="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium shrink-0">{g.jlpt}</span>
                             )}
                           </div>
-                        )}
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
-                    </button>
-                    <button onClick={() => setDeleteId(g.id)} className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0">
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                          <div className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{g.meaning}</div>
+                          {g.usage && <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1">{g.usage}</div>}
+                          {g.article_title && (
+                            <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
+                              来自：{g.article_title}
+                              {g.article_id && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); navigate(`/article/${g.article_id}${g.sentence_id ? `?sentence=${g.sentence_id}` : ''}`) }}
+                                  className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
+                                >
+                                  <ExternalLink size={11} />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
+                      </button>
+                    </div>
+                  </SwipeableRow>
                 )}
               </div>
             ))}
