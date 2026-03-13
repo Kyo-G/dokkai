@@ -61,6 +61,24 @@ async function fetchText(url) {
   return res.text()
 }
 
+/** Download a .tgz and return the parsed JSON of the first .json file inside. */
+async function fetchTgzJSON(url) {
+  process.stdout.write(`  GET (tgz) ${url.slice(0, 70)}...\n`)
+  const res = await fetch(url, { headers: { 'User-Agent': 'dokkai-dict-builder' } })
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`)
+  const buf = Buffer.from(await res.arrayBuffer())
+  const tmpTgz = '/tmp/_dokkai_jmdict.tgz'
+  const tmpDir = '/tmp/_dokkai_jmdict_out'
+  writeFileSync(tmpTgz, buf)
+  execSync(`rm -rf ${tmpDir} && mkdir -p ${tmpDir} && tar -xzf ${tmpTgz} -C ${tmpDir}`)
+  // Find the extracted .json file
+  const jsonFile = execSync(`find ${tmpDir} -name '*.json' | head -1`).toString().trim()
+  if (!jsonFile) throw new Error('No .json found inside tgz')
+  process.stdout.write(`  Parsing ${jsonFile}...\n`)
+  const { readFileSync } = await import('fs')
+  return JSON.parse(readFileSync(jsonFile, 'utf8'))
+}
+
 async function fetchBz2Text(url) {
   process.stdout.write(`  GET (bz2) ${url.slice(0, 70)}...\n`)
   const res = await fetch(url)
@@ -80,31 +98,34 @@ async function main() {
   const release = await fetchJSON(
     'https://api.github.com/repos/scriptin/jmdict-simplified/releases/latest'
   )
-  // Try language-specific zh file first, then all-languages file
-  let asset = release.assets.find(a => /jmdict-(zh|zho|cmn|all).*\.json$/.test(a.name))
+  // Files are named like: jmdict-all-3.6.2+20260309124103.json.tgz
+  // Chinese data is in the "all" file (no separate zh file)
+  let asset = release.assets.find(a => a.name.startsWith('jmdict-all') && a.name.endsWith('.json.tgz'))
   if (!asset) {
     console.log('  Available assets:', release.assets.map(a => a.name).join(', '))
-    throw new Error('Cannot find a suitable JMdict asset. Check the GitHub releases page.')
+    throw new Error('Cannot find jmdict-all .json.tgz asset.')
   }
-  console.log(`  Using: ${asset.name} (${(asset.size / 1024 / 1024).toFixed(1)} MB)`)
-  const jmdict = await fetchJSON(asset.browser_download_url)
+  console.log(`  Using: ${asset.name} (${(asset.size / 1024 / 1024).toFixed(1)} MB compressed)`)
+  const jmdict = await fetchTgzJSON(asset.browser_download_url)
   console.log(`  Loaded ${jmdict.words.length} entries\n`)
 
   // ── 2. Kanjium pitch accent ────────────────────────────────────────
   console.log('Step 2/4: Kanjium pitch accent')
-  const pitchCSV = await fetchText(
-    'https://raw.githubusercontent.com/mifunetoshiro/kanjium/master/data/source_files/merged/kanjium_pitches.csv'
+  // Format: word TAB reading TAB pitch1,pitch2,...
+  const pitchTSV = await fetchText(
+    'https://raw.githubusercontent.com/mifunetoshiro/kanjium/master/data/source_files/raw/accents.txt'
   )
   const pitchMap = new Map() // "kanji|kana" → number
   let pitchCount = 0
-  for (const line of pitchCSV.split('\n')) {
-    const parts = line.split(',')
+  for (const line of pitchTSV.split('\n')) {
+    const parts = line.split('\t')
     if (parts.length < 3) continue
-    const [kanji, kana, rawPitch] = parts
-    const pitch = parseInt(rawPitch.trim())
-    if (isNaN(pitch)) continue
-    pitchMap.set(`${kanji.trim()}|${kana.trim()}`, pitch)
-    pitchMap.set(`${kana.trim()}|${kana.trim()}`, pitch) // kana-only key
+    const kanji = parts[0].trim()
+    const kana  = parts[1].trim()
+    const pitch = parseInt(parts[2].split(',')[0]) // take first pitch if multiple
+    if (!kanji || !kana || isNaN(pitch)) continue
+    pitchMap.set(`${kanji}|${kana}`, pitch)
+    pitchMap.set(`${kana}|${kana}`, pitch)
     pitchCount++
   }
   console.log(`  Loaded ${pitchCount} pitch entries\n`)
@@ -124,7 +145,17 @@ async function main() {
   try {
     const jpnTSV   = await fetchBz2Text('https://downloads.tatoeba.org/exports/per_language/jpn/jpn_sentences.tsv.bz2')
     const cmnTSV   = await fetchBz2Text('https://downloads.tatoeba.org/exports/per_language/cmn/cmn_sentences.tsv.bz2')
-    const linksCSV = await fetchBz2Text('https://downloads.tatoeba.org/exports/links.csv.bz2')
+    // links.tar.bz2 contains links.csv inside a tar archive
+    const linksTmp = '/tmp/_dokkai_links.tar.bz2'
+    const linksDir = '/tmp/_dokkai_links_out'
+    process.stdout.write('  GET (tar.bz2) https://downloads.tatoeba.org/exports/links.tar.bz2...\n')
+    const linksRes = await fetch('https://downloads.tatoeba.org/exports/links.tar.bz2')
+    if (!linksRes.ok) throw new Error(`HTTP ${linksRes.status} links.tar.bz2`)
+    writeFileSync(linksTmp, Buffer.from(await linksRes.arrayBuffer()))
+    execSync(`rm -rf ${linksDir} && mkdir -p ${linksDir} && tar -xjf ${linksTmp} -C ${linksDir}`, { maxBuffer: 50 * 1024 * 1024 })
+    const { readFileSync } = await import('fs')
+    const linksFile = execSync(`find ${linksDir} -name '*.csv' | head -1`).toString().trim()
+    const linksCSV = readFileSync(linksFile, 'utf8')
 
     // Parse sentences
     const jpnSents = new Map()
