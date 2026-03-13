@@ -8,6 +8,7 @@ import { useSpeech } from '../hooks/useSpeech'
 import WordDetailSheet from './WordDetailSheet'
 import GrammarDetailSheet from './GrammarDetailSheet'
 import Furigana from './Furigana'
+import VocabText, { vocabCardClass } from './VocabText'
 
 const JLPT_RANK: Record<string, number> = { N5: 5, N4: 4, N3: 3, N2: 2, N1: 1 }
 
@@ -36,13 +37,6 @@ function roleColor(role: string): string {
     if (role.includes(key)) return ROLE_COLORS[key]
   }
   return 'bg-gray-100 text-gray-600'
-}
-
-// Interval thresholds for SM-2 stage labels
-function vocabStage(interval: number): { label: string; color: string } {
-  if (interval <= 3)  return { label: '刚加入', color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400' }
-  if (interval <= 10) return { label: '学习中', color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400' }
-  return               { label: '快记住了', color: 'bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400' }
 }
 
 interface Props {
@@ -147,7 +141,13 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             <div className="font-jp text-base text-gray-900 dark:text-gray-100 flex-1" lang="ja">
               {showFurigana && analysis?.furigana
                 ? <Furigana text={analysis.furigana} className="leading-loose" />
-                : <span className="leading-relaxed">{sentence.content}</span>
+                : <VocabText
+                    text={sentence.content}
+                    analysisWords={analysis?.words}
+                    vocabIndex={vocabIndex ?? new Map()}
+                    className="leading-relaxed"
+                    lang="ja"
+                  />
               }
             </div>
             <div className="mt-1 shrink-0 text-gray-400 dark:text-gray-500">
@@ -265,7 +265,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                     const wordSaved = savedWords.has(w.word)
                     const wordSaving = savingWord === w.word
                     return (
-                      <div key={i} className="bg-gray-50 dark:bg-[#252525] active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2">
+                      <div key={i} className={`${vocabIndex?.has(w.word) ? vocabCardClass(vocabIndex.get(w.word)!) : 'bg-gray-50 dark:bg-[#252525]'} active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2`}>
                         <button onClick={() => setSelectedWord(w)} className="flex-1 text-left">
                           <div className="flex items-center gap-2 flex-wrap">
                             <ruby className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">
@@ -282,17 +282,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                                 {w.jlpt}
                               </span>
                             )}
-                            {(() => {
-                              const interval = vocabIndex?.get(w.word)
-                              if (interval === undefined) return null
-                              const { label, color } = vocabStage(interval)
-                              return (
-                                <span className={`text-[10px] font-medium rounded px-1.5 py-0.5 leading-none flex items-center gap-0.5 ${color}`}>
-                                  📚 {label}
-                                </span>
-                              )
-                            })()}
-                            <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
+<span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
                           </div>
                           <div className="text-gray-600 dark:text-gray-400 text-sm mt-0.5">{w.meaning}</div>
                         </button>
