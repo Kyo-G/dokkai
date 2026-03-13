@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { getArticle, getSentences, saveSentenceAnalysis } from '../lib/db'
+import { getArticle, getSentences, saveSentenceAnalysis, getVocabIndex } from '../lib/db'
 import { getProgress, markSentenceRead } from '../lib/progress'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
@@ -53,6 +53,7 @@ export default function ArticleReadPage() {
   const [readIds, setReadIds] = useState<Set<string>>(new Set())
   const [mode, setMode] = useState<Mode>('read')
   const [jumpToId, setJumpToId] = useState<string | null>(null)
+  const [vocabIndex, setVocabIndex] = useState<Map<string, number>>(new Map())
 
   useEffect(() => {
     if (id) load(id)
@@ -60,10 +61,12 @@ export default function ArticleReadPage() {
 
   async function load(articleId: string) {
     try {
-      const [art, sents] = await Promise.all([
+      const [art, sents, vocab] = await Promise.all([
         getArticle(articleId),
         getSentences(articleId),
+        getVocabIndex(),
       ])
+      setVocabIndex(vocab)
       if (!art) { setError('文章不存在'); return }
       setArticle(art)
       setSentences(sents)
@@ -261,6 +264,7 @@ export default function ArticleReadPage() {
                   setReadIds(prev => new Set(prev).add(sentence.id))
                   markSentenceRead(article.id, sentence.id, sentences.length)
                 }}
+                vocabIndex={vocabIndex}
               />
             </div>
           ))}

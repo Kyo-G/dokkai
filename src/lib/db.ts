@@ -150,6 +150,27 @@ export async function addWord(
   return data
 }
 
+/**
+ * Returns a map of { word → interval } for all saved words that are not yet mastered.
+ * "Mastered" = interval >= 21 days. Used to highlight known-but-learning words during reading.
+ */
+export async function getVocabIndex(): Promise<Map<string, number>> {
+  const { data, error } = await supabase
+    .from('words')
+    .select(`word, review_records(interval)`)
+  if (error) throw error
+
+  const map = new Map<string, number>()
+  for (const row of data || []) {
+    const r = (row as { word: string; review_records: { interval: number }[] | null })
+    const interval = r.review_records?.[0]?.interval ?? 1
+    if (interval < 21) {
+      map.set(r.word, interval)
+    }
+  }
+  return map
+}
+
 export async function deleteWord(id: string): Promise<void> {
   await supabase.from('review_records').delete().eq('word_id', id)
   const { error } = await supabase.from('words').delete().eq('id', id)

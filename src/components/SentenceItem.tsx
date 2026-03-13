@@ -38,6 +38,13 @@ function roleColor(role: string): string {
   return 'bg-gray-100 text-gray-600'
 }
 
+// Interval thresholds for SM-2 stage labels
+function vocabStage(interval: number): { label: string; color: string } {
+  if (interval <= 3)  return { label: '刚加入', color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400' }
+  if (interval <= 10) return { label: '学习中', color: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400' }
+  return               { label: '快记住了', color: 'bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-400' }
+}
+
 interface Props {
   sentence: Sentence
   articleId: string
@@ -46,9 +53,10 @@ interface Props {
   showFurigana?: boolean
   isRead?: boolean
   onRead?: () => void
+  vocabIndex?: Map<string, number>
 }
 
-export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand, showFurigana, isRead, onRead }: Props) {
+export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand, showFurigana, isRead, onRead, vocabIndex }: Props) {
   const { settings } = useSettings()
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -59,7 +67,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
   const { speak, stop, speaking } = useSpeech()
   const [savedGrammars, setSavedGrammars] = useState<Set<string>>(new Set())
   const [savingGrammar, setSavingGrammar] = useState<string | null>(null)
-  const [savedWords, setSavedWords] = useState<Set<string>>(new Set())
+  const [savedWords, setSavedWords] = useState<Set<string>>(() => new Set(vocabIndex?.keys()))
   const [savingWord, setSavingWord] = useState<string | null>(null)
 
   async function runAnalysis() {
@@ -274,6 +282,16 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                                 {w.jlpt}
                               </span>
                             )}
+                            {(() => {
+                              const interval = vocabIndex?.get(w.word)
+                              if (interval === undefined) return null
+                              const { label, color } = vocabStage(interval)
+                              return (
+                                <span className={`text-[10px] font-medium rounded px-1.5 py-0.5 leading-none flex items-center gap-0.5 ${color}`}>
+                                  📚 {label}
+                                </span>
+                              )
+                            })()}
                             <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
                           </div>
                           <div className="text-gray-600 dark:text-gray-400 text-sm mt-0.5">{w.meaning}</div>
