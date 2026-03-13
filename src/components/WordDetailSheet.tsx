@@ -50,7 +50,6 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
   const [added, setAdded] = useState(!!existingWord)
   const [adding, setAdding] = useState(false)
 
-  // Determine pitch to show: prefer AI/word record, fallback to dict
   const pitch = wordInfo.pitch ?? existingWord?.details_cache?.pitch ?? dictEntry?.p
 
   useEffect(() => {
@@ -96,11 +95,7 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
     }
   }
 
-  // ── Render helpers ────────────────────────────────────────────────
-  const meanings = dictEntry?.zh ?? dictEntry?.en ?? []
-  const hasDictData = dictEntry && (meanings.length > 0 || dictEntry.ex?.length)
-
-  return (
+    return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
@@ -153,34 +148,24 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
         {/* Scrollable content */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
 
-          {/* ── 释义 (Dictionary) ──────────────────────────────── */}
+          {/* ── 释义 ─────────────────────────────────────────────── */}
           <section>
             <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">释义</div>
-            {dictLoading ? (
-              <div className="flex items-center gap-1.5 text-gray-400 text-sm">
-                <Loader2 size={14} className="animate-spin" /> 加载词典…
-              </div>
-            ) : hasDictData ? (
-              <div className="space-y-1">
-                {meanings.map((m, i) => (
-                  <div key={i} className="flex gap-2 text-gray-900 dark:text-gray-100">
-                    {meanings.length > 1 && (
-                      <span className="text-gray-400 dark:text-gray-500 shrink-0 text-sm tabular-nums mt-0.5">
-                        {i + 1}.
-                      </span>
+
+            {/* Primary: AI-provided Chinese meaning (always in Chinese, context-aware) */}
+            <div className="text-gray-900 dark:text-gray-100 font-medium">{wordInfo.meaning}</div>
+
+            {/* Supplementary: English meanings from local dict */}
+            {!dictLoading && dictEntry?.en && dictEntry.en.length > 0 && (
+              <div className="mt-2 space-y-0.5">
+                {dictEntry.en.map((m, i) => (
+                  <div key={i} className="flex gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                    {dictEntry.en!.length > 1 && (
+                      <span className="shrink-0 tabular-nums">{i + 1}.</span>
                     )}
-                    <span className="font-medium">{m}</span>
+                    <span>{m}</span>
                   </div>
                 ))}
-                {/* Fallback: show AI meaning from sentence analysis */}
-                {meanings.length === 0 && wordInfo.meaning && (
-                  <div className="text-gray-900 dark:text-gray-100 font-medium">{wordInfo.meaning}</div>
-                )}
-              </div>
-            ) : (
-              <div className="text-gray-900 dark:text-gray-100 font-medium">
-                {wordInfo.meaning}
-                <span className="text-xs text-gray-400 ml-2">(来自AI分析)</span>
               </div>
             )}
           </section>

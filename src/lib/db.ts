@@ -311,19 +311,17 @@ export async function submitGrammarReview(
 export async function getUserExamplesForWord(
   word: string
 ): Promise<{ content: string; furigana?: string; articleTitle: string; articleId: string }[]> {
+  // Use JSONB @> (contains) to search inside analysis_cache directly.
+  // This correctly finds the word regardless of inflection, because we match
+  // what the AI stored in the analysis, not the raw sentence text.
   const { data, error } = await supabase
     .from('sentences')
     .select('content, analysis_cache, article_id, articles(title)')
-    .ilike('content', `%${word}%`)
-    .not('analysis_cache', 'is', null)
-    .limit(15)
+    .filter('analysis_cache', 'cs', JSON.stringify({ words: [{ word }] }))
+    .limit(5)
   if (error) throw error
 
   return (data || [])
-    .filter(s =>
-      (s.analysis_cache as { words?: { word: string }[] } | null)
-        ?.words?.some(w => w.word === word)
-    )
     .slice(0, 4)
     .map(s => ({
       content:      s.content,
