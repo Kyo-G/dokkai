@@ -126,19 +126,6 @@ export default function VocabPage() {
                             <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#2a2a2a] rounded px-1.5 py-0.5 shrink-0">{word.pos}</span>
                           </div>
                           <div className="text-sm text-gray-600 dark:text-gray-400 mt-0.5 truncate">{word.meaning}</div>
-                          {word.article_title && (
-                            <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
-                              来自：{word.article_title}
-                              {word.article_id && (
-                                <button
-                                  onClick={e => { e.stopPropagation(); navigate(`/article/${word.article_id}${word.sentence_id ? `?sentence=${word.sentence_id}` : ''}`) }}
-                                  className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
-                                >
-                                  <ExternalLink size={11} />
-                                </button>
-                              )}
-                            </div>
-                          )}
                         </div>
                         <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
                       </button>
