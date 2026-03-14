@@ -155,11 +155,11 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
           <section>
             <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">{t.definition}</div>
 
-            {/* Primary: AI-provided Chinese meaning (always in Chinese, context-aware) */}
+            {/* Primary: AI-provided meaning (context-aware, language follows settings) */}
             <div className="text-gray-900 dark:text-gray-100 font-medium">{wordInfo.meaning}</div>
 
-            {/* Supplementary: English meanings from local dict */}
-            {!dictLoading && dictEntry?.en && dictEntry.en.length > 0 && (
+            {/* Supplementary: English meanings from local dict — only shown in Chinese mode to avoid redundancy */}
+            {settings.language === 'zh' && !dictLoading && dictEntry?.en && dictEntry.en.length > 0 && (
               <div className="mt-2 space-y-0.5">
                 {dictEntry.en.map((m, i) => (
                   <div key={i} className="flex gap-1.5 text-sm text-gray-500 dark:text-gray-400">
@@ -228,7 +228,9 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
                     <div className="font-jp text-sm text-gray-800 dark:text-gray-200 leading-relaxed" lang="ja">
                       {ex.j}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ex.c}</div>
+                    {settings.language === 'zh' && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ex.c}</div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -269,7 +271,7 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
                     {aiDetails.examples.map((ex, i) => (
                       <div key={i} className="bg-gray-50 dark:bg-[#252525] rounded-xl p-3">
                         <Furigana text={ex.japanese} className="font-jp text-sm text-gray-800 dark:text-gray-200 leading-loose" />
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ex.chinese}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ex.translation}</div>
                       </div>
                     ))}
                   </div>

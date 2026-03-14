@@ -85,7 +85,7 @@ export interface WordDetails {
 
 export interface Example {
   japanese: string
-  chinese: string
+  translation: string
 }
 
 export interface ReviewRecord {

@@ -192,7 +192,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
                       {aiDetails.examples.map((ex, i) => (
                         <div key={i} className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3">
                           <Furigana text={ex.japanese} className="font-jp text-gray-900 dark:text-gray-100 leading-loose" />
-                          <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">{ex.chinese}</div>
+                          <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">{ex.translation}</div>
                         </div>
                       ))}
                     </div>

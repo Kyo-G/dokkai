@@ -4,7 +4,47 @@ import type { Settings, SentenceAnalysis, WordDetails, GrammarDetails } from '..
 // Prompt builders
 // ──────────────────────────────────────────────
 
-function buildSentenceAnalysisPrompt(sentence: string): string {
+function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): string {
+  if (language === 'en') {
+    return `You are a professional Japanese language teacher. Analyze the following Japanese sentence and return a strict JSON format with English explanations.
+
+Sentence to analyze: 「${sentence}」
+
+Return the following JSON structure (no extra text, JSON only):
+{
+  "furigana": "The full sentence with furigana added to all kanji using the format {漢字|よみ}; hiragana, katakana, punctuation and numbers stay as-is",
+  "structure": [
+    {"text": "sentence segment", "role": "Subject / Predicate / Object / Modifier / Complement / Conjunction / etc."}
+  ],
+  "grammar": [
+    {
+      "pattern": "grammar pattern",
+      "meaning": "meaning in English",
+      "usage": "usage explanation",
+      "jlpt": "N3"
+    }
+  ],
+  "words": [
+    {
+      "word": "dictionary form",
+      "reading": "kana reading",
+      "pos": "part of speech (noun / verb / adjective / adverb / particle / etc.)",
+      "meaning": "English meaning",
+      "pitch": 0,
+      "jlpt": "N3"
+    }
+  ]
+}
+
+Notes:
+- furigana: only annotate characters that are kanji in the original text using {漢字|よみ}; leave hiragana, katakana, punctuation and numbers unchanged. Never convert kana words to kanji just to annotate them. Example: {私|わたし}は{日本語|にほんご}が{好き|すき}です。（は、が、です are not annotated）
+- structure must cover the entire sentence without omissions
+- grammar should list only noteworthy grammar points; may be an empty array
+- words should list the main words in the sentence (exclude simple particles like は、が、を、に)
+- pitch is the Tokyo dialect pitch accent nucleus position: 0 = flat (heiban), 1 = head-high (atamadaka), 2+ = middle/tail-high; use an integer
+- jlpt: fill in the JLPT level (N5/N4/N3/N2/N1) for each word; leave as empty string if uncertain`
+  }
+
   return `你是一位专业的日语教师，请分析以下日语句子，用中文解释，返回严格的JSON格式。
 
 待分析句子：「${sentence}」
@@ -44,7 +84,39 @@ function buildSentenceAnalysisPrompt(sentence: string): string {
 - jlpt 填该单词对应的 JLPT 等级（N5/N4/N3/N2/N1），不确定时填空字符串`
 }
 
-function buildWordDetailsPrompt(word: string, reading: string, pos: string): string {
+function buildWordDetailsPrompt(word: string, reading: string, pos: string, language: 'zh' | 'en'): string {
+  if (language === 'en') {
+    return `You are a professional Japanese language teacher. Explain the following Japanese word in detail in English, and return a strict JSON format.
+
+Word: ${word}（${reading}）[${pos}]
+
+Return the following JSON structure (no extra text, JSON only):
+{
+  "word": "${word}",
+  "reading": "${reading}",
+  "pos": "${pos}",
+  "pitch": 0,
+  "meaning": "complete English meaning",
+  "usage": "usage notes including common collocations and important points",
+  "examples": [
+    {
+      "japanese": "example sentence with furigana {漢字|よみ} on kanji",
+      "translation": "English translation"
+    },
+    {
+      "japanese": "example sentence 2 with furigana {漢字|よみ} on kanji",
+      "translation": "English translation 2"
+    },
+    {
+      "japanese": "example sentence 3 with furigana {漢字|よみ} on kanji",
+      "translation": "English translation 3"
+    }
+  ]
+}
+
+Note: in the japanese field, only annotate characters that are kanji in the original using {漢字|よみ}; leave hiragana, katakana and punctuation unchanged. Never convert kana words to kanji just to annotate them.`
+  }
+
   return `你是一位专业的日语教师，请详细解释以下日语单词，用中文，返回严格的JSON格式。
 
 单词：${word}（${reading}）[${pos}]
@@ -60,15 +132,15 @@ function buildWordDetailsPrompt(word: string, reading: string, pos: string): str
   "examples": [
     {
       "japanese": "日语例句，对汉字用{漢字|よみ}标注振假名",
-      "chinese": "中文翻译"
+      "translation": "中文翻译"
     },
     {
       "japanese": "日语例句2，对汉字用{漢字|よみ}标注振假名",
-      "chinese": "中文翻译2"
+      "translation": "中文翻译2"
     },
     {
       "japanese": "日语例句3，对汉字用{漢字|よみ}标注振假名",
-      "chinese": "中文翻译3"
+      "translation": "中文翻译3"
     }
   ]
 }
@@ -76,7 +148,28 @@ function buildWordDetailsPrompt(word: string, reading: string, pos: string): str
 注意：examples 中的 japanese 字段，只对原文本身是汉字的词标注{漢字|よみ}，平假名/片假名/符号原样保留，禁止把假名词改写成汉字再标注。`
 }
 
-function buildGrammarDetailsPrompt(pattern: string, meaning: string): string {
+function buildGrammarDetailsPrompt(pattern: string, meaning: string, language: 'zh' | 'en'): string {
+  if (language === 'en') {
+    return `You are a professional Japanese language teacher. Explain the following Japanese grammar point in detail in English, and return a strict JSON format.
+
+Grammar: ${pattern}（${meaning}）
+
+Return the following JSON structure (no extra text, JSON only):
+{
+  "pattern": "${pattern}",
+  "meaning": "${meaning}",
+  "usage": "detailed usage explanation including conjugation rules and important notes",
+  "nuance": "nuance and tone notes; differences from similar grammar patterns",
+  "examples": [
+    {"japanese": "example 1 with {漢字|よみ} furigana on kanji", "translation": "English translation 1"},
+    {"japanese": "example 2 with {漢字|よみ} furigana on kanji", "translation": "English translation 2"},
+    {"japanese": "example 3 with {漢字|よみ} furigana on kanji", "translation": "English translation 3"}
+  ]
+}
+
+Note: in the japanese field, only annotate characters that are kanji in the original using {漢字|よみ}; leave hiragana, katakana and punctuation unchanged. Never convert kana words to kanji just to annotate them.`
+  }
+
   return `你是一位专业的日语教师，请详细讲解以下日语语法点，用中文，返回严格的JSON格式。
 
 语法：${pattern}（${meaning}）
@@ -88,17 +181,19 @@ function buildGrammarDetailsPrompt(pattern: string, meaning: string): string {
   "usage": "详细的用法说明，包括接续方式和注意事项",
   "nuance": "语感/语气说明，与近似语法的区别",
   "examples": [
-    {"japanese": "例句1，对汉字用{漢字|よみ}标注振假名", "chinese": "中文翻译1"},
-    {"japanese": "例句2，对汉字用{漢字|よみ}标注振假名", "chinese": "中文翻译2"},
-    {"japanese": "例句3，对汉字用{漢字|よみ}标注振假名", "chinese": "中文翻译3"}
+    {"japanese": "例句1，对汉字用{漢字|よみ}标注振假名", "translation": "中文翻译1"},
+    {"japanese": "例句2，对汉字用{漢字|よみ}标注振假名", "translation": "中文翻译2"},
+    {"japanese": "例句3，对汉字用{漢字|よみ}标注振假名", "translation": "中文翻译3"}
   ]
 }
 
 注意：examples 中的 japanese 字段，只对原文本身是汉字的词标注{漢字|よみ}，平假名/片假名/符号原样保留，禁止把假名词改写成汉字再标注。`
 }
 
-function buildTestPrompt(): string {
-  return '请用中文回答：1+1等于几？只回答数字即可。'
+function buildTestPrompt(language: 'zh' | 'en'): string {
+  return language === 'en'
+    ? 'Answer in English: what is 1+1? Reply with the number only.'
+    : '请用中文回答：1+1等于几？只回答数字即可。'
 }
 
 // ──────────────────────────────────────────────
@@ -208,22 +303,23 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
 // ──────────────────────────────────────────────
 
 async function callAI(settings: Settings, prompt: string): Promise<string> {
-  const { provider, claudeKey, openaiKey, geminiKey, deepseekKey } = settings
+  const { provider, claudeKey, openaiKey, geminiKey, deepseekKey, language } = settings
+  const isEn = language === 'en'
   switch (provider) {
     case 'claude':
-      if (!claudeKey) throw new Error('请先在设置页面填入 Claude API Key')
+      if (!claudeKey) throw new Error(isEn ? 'Please enter your Claude API Key in Settings.' : '请先在设置页面填入 Claude API Key')
       return callClaude(claudeKey, prompt)
     case 'openai':
-      if (!openaiKey) throw new Error('请先在设置页面填入 OpenAI API Key')
+      if (!openaiKey) throw new Error(isEn ? 'Please enter your OpenAI API Key in Settings.' : '请先在设置页面填入 OpenAI API Key')
       return callOpenAI(openaiKey, prompt)
     case 'gemini':
-      if (!geminiKey) throw new Error('请先在设置页面填入 Gemini API Key')
+      if (!geminiKey) throw new Error(isEn ? 'Please enter your Gemini API Key in Settings.' : '请先在设置页面填入 Gemini API Key')
       return callGemini(geminiKey, prompt)
     case 'deepseek':
-      if (!deepseekKey) throw new Error('请先在设置页面填入 DeepSeek API Key')
+      if (!deepseekKey) throw new Error(isEn ? 'Please enter your DeepSeek API Key in Settings.' : '请先在设置页面填入 DeepSeek API Key')
       return callDeepSeek(deepseekKey, prompt)
     default:
-      throw new Error('未知的 AI Provider')
+      throw new Error(isEn ? 'Unknown AI provider.' : '未知的 AI Provider')
   }
 }
 
@@ -235,7 +331,7 @@ export async function analyzeSentence(
   settings: Settings,
   sentence: string
 ): Promise<SentenceAnalysis> {
-  const prompt = buildSentenceAnalysisPrompt(sentence)
+  const prompt = buildSentenceAnalysisPrompt(sentence, settings.language)
   const text = await callAI(settings, prompt)
   const parsed = extractJSON(text) as SentenceAnalysis
   return parsed
@@ -247,7 +343,7 @@ export async function getWordDetails(
   reading: string,
   pos: string
 ): Promise<WordDetails> {
-  const prompt = buildWordDetailsPrompt(word, reading, pos)
+  const prompt = buildWordDetailsPrompt(word, reading, pos, settings.language)
   const text = await callAI(settings, prompt)
   const parsed = extractJSON(text) as WordDetails
   return parsed
@@ -258,11 +354,11 @@ export async function getGrammarDetails(
   pattern: string,
   meaning: string
 ): Promise<GrammarDetails> {
-  const prompt = buildGrammarDetailsPrompt(pattern, meaning)
+  const prompt = buildGrammarDetailsPrompt(pattern, meaning, settings.language)
   const text = await callAI(settings, prompt)
   return extractJSON(text) as GrammarDetails
 }
 
 export async function testApiKey(settings: Settings): Promise<void> {
-  await callAI(settings, buildTestPrompt())
+  await callAI(settings, buildTestPrompt(settings.language))
 }

@@ -292,7 +292,7 @@ export default function ReviewPage() {
                         {userExamples?.length === 0 && w.details_cache?.examples?.[0] && (
                           <div className="bg-gray-50 dark:bg-[#252525] rounded-xl p-3">
                             <div className="font-jp text-sm text-gray-700 dark:text-gray-300" lang="ja">{w.details_cache.examples[0].japanese}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{w.details_cache.examples[0].chinese}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{w.details_cache.examples[0].translation}</div>
                           </div>
                         )}
                         <button
