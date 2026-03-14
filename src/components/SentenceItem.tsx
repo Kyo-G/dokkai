@@ -10,6 +10,7 @@ import GrammarDetailSheet from './GrammarDetailSheet'
 import Furigana from './Furigana'
 import { vocabCardClass } from './VocabText'
 import SwipeableRow from './SwipeableRow'
+import { getT } from '../lib/i18n'
 
 const JLPT_RANK: Record<string, number> = { N5: 5, N4: 4, N3: 3, N2: 2, N1: 1 }
 
@@ -53,6 +54,7 @@ interface Props {
 
 export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand, showFurigana, isRead, onRead, vocabIndex }: Props) {
   const { settings } = useSettings()
+  const t = getT(settings.language)
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -76,7 +78,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
       await saveSentenceAnalysis(sentence.id, result)
       onAnalyzed(sentence.id, result)
     } catch (e) {
-      setError(e instanceof Error ? e.message : '分析失败，请重试')
+      setError(e instanceof Error ? e.message : t.analysisFailed)
     } finally {
       setLoading(false)
     }
@@ -180,14 +182,14 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                 className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 active:text-gray-600 disabled:opacity-40"
               >
                 <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-                重新分析
+                {t.reanalyze}
               </button>
             </div>
 
             {/* Structure */}
             {analysis.structure?.length > 0 && (
               <div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">句子结构</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">{t.sentenceStructure}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {analysis.structure.map((part, i) => (
                     <span
@@ -210,13 +212,13 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
               return (
                 <div>
                   <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2 flex items-center gap-2">
-                    语法点
+                    {t.grammarPoints}
                     {hiddenGrammar.length > 0 && (
                       <button
                         onClick={() => setShowHiddenGrammar(v => !v)}
                         className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#333] rounded px-1.5 py-0.5 font-normal"
                       >
-                        {showHiddenGrammar ? '收起简单语法' : `已隐藏 ${hiddenGrammar.length} 个简单语法`}
+                        {showHiddenGrammar ? t.collapseSimpleGrammar : t.hiddenGrammarCount(hiddenGrammar.length)}
                       </button>
                     )}
                   </div>
@@ -265,13 +267,13 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
               return (
               <div>
                 <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2 flex items-center gap-2">
-                  单词列表
+                  {t.wordList}
                   {hidden.length > 0 && (
                     <button
                       onClick={() => setShowHiddenWords(v => !v)}
                       className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#333] rounded px-1.5 py-0.5 font-normal"
                     >
-                      {showHiddenWords ? '收起简单词' : `已隐藏 ${hidden.length} 个简单词`}
+                      {showHiddenWords ? t.collapseSimpleWords : t.hiddenWordCount(hidden.length)}
                     </button>
                   )}
                 </div>

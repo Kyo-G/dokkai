@@ -9,6 +9,7 @@ export const defaultSettings: Settings = {
   geminiKey: '',
   deepseekKey: '',
   userLevel: '',
+  language: 'zh',
 }
 
 export function loadSettings(): Settings {

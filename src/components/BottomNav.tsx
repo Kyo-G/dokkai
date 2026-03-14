@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { BookOpen, BookMarked, RotateCcw, Settings } from 'lucide-react'
+import { useSettings } from '../hooks/useSettings'
+import { getT } from '../lib/i18n'
 
 interface Props {
   dueCount?: number
@@ -7,12 +9,14 @@ interface Props {
 
 export default function BottomNav({ dueCount = 0 }: Props) {
   const { pathname } = useLocation()
+  const { settings } = useSettings()
+  const t = getT(settings.language)
 
   const tabs = [
-    { path: '/', icon: BookOpen, label: '文章' },
-    { path: '/vocab', icon: BookMarked, label: '生词本' },
-    { path: '/review', icon: RotateCcw, label: '复习' },
-    { path: '/settings', icon: Settings, label: '设置' },
+    { path: '/', icon: BookOpen, label: t.navArticles },
+    { path: '/vocab', icon: BookMarked, label: t.navVocab },
+    { path: '/review', icon: RotateCcw, label: t.navReview },
+    { path: '/settings', icon: Settings, label: t.navSettings },
   ]
 
   return (

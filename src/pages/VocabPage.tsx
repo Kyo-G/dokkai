@@ -5,10 +5,14 @@ import { getWords, deleteWord, getGrammars, deleteGrammar } from '../lib/db'
 import type { Word, WordInSentence, SavedGrammar } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
 import GrammarDetailSheet from '../components/GrammarDetailSheet'
+import { useSettings } from '../hooks/useSettings'
+import { getT } from '../lib/i18n'
 
 type Tab = 'words' | 'grammar'
 
 export default function VocabPage() {
+  const { settings } = useSettings()
+  const t = getT(settings.language)
   const [tab, setTab] = useState<Tab>('words')
   const [words, setWords] = useState<Word[]>([])
   const [grammars, setGrammars] = useState<SavedGrammar[]>([])
@@ -38,7 +42,7 @@ export default function VocabPage() {
       await deleteWord(id)
       setWords(prev => prev.filter(w => w.id !== id))
     } catch (e) {
-      alert(e instanceof Error ? e.message : '删除失败')
+      alert(e instanceof Error ? e.message : t.delete)
     } finally {
       setDeleteId(null)
     }
@@ -49,7 +53,7 @@ export default function VocabPage() {
       await deleteGrammar(id)
       setGrammars(prev => prev.filter(g => g.id !== id))
     } catch (e) {
-      alert(e instanceof Error ? e.message : '删除失败')
+      alert(e instanceof Error ? e.message : t.delete)
     } finally {
       setDeleteId(null)
     }
@@ -64,8 +68,8 @@ export default function VocabPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">收藏</h1>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{words.length} 个单词 · {grammars.length} 个语法</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t.savedTitle}</h1>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t.savedSummary(words.length, grammars.length)}</p>
         </div>
       </div>
 
@@ -76,14 +80,14 @@ export default function VocabPage() {
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors
             ${tab === 'words' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
         >
-          单词
+          {t.words}
         </button>
         <button
           onClick={() => setTab('grammar')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors
             ${tab === 'grammar' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
         >
-          语法
+          {t.grammar}
         </button>
       </div>
 
@@ -95,8 +99,8 @@ export default function VocabPage() {
         words.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <BookMarked size={48} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">单词本是空的</p>
-            <p className="text-xs mt-1">在文章阅读时点击单词加入</p>
+            <p className="text-sm">{t.emptyWords}</p>
+            <p className="text-xs mt-1">{t.emptyWordsHint}</p>
           </div>
         ) : (
           <div className="space-y-2 pb-24">
@@ -104,10 +108,10 @@ export default function VocabPage() {
               <div key={word.id}>
                 {deleteId === word.id ? (
                   <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
-                    <span className="text-sm text-red-700">删除「{word.word}」？</span>
+                    <span className="text-sm text-red-700">{t.deleteWordConfirm(word.word)}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg">取消</button>
-                      <button onClick={() => handleDeleteWord(word.id)} className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg">删除</button>
+                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg">{t.cancel}</button>
+                      <button onClick={() => handleDeleteWord(word.id)} className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg">{t.delete}</button>
                     </div>
                   </div>
                 ) : (
@@ -138,8 +142,8 @@ export default function VocabPage() {
         grammars.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <BookMarked size={48} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">语法收藏是空的</p>
-            <p className="text-xs mt-1">在句子分析时点击语法点右侧的书签加入</p>
+            <p className="text-sm">{t.emptyGrammar}</p>
+            <p className="text-xs mt-1">{t.emptyGrammarHint}</p>
           </div>
         ) : (
           <div className="space-y-2 pb-24">
@@ -147,10 +151,10 @@ export default function VocabPage() {
               <div key={g.id}>
                 {deleteId === g.id ? (
                   <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
-                    <span className="text-sm text-red-700">删除「{g.pattern}」？</span>
+                    <span className="text-sm text-red-700">{t.deleteGrammarConfirm(g.pattern)}</span>
                     <div className="flex gap-2">
-                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg">取消</button>
-                      <button onClick={() => handleDeleteGrammar(g.id)} className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg">删除</button>
+                      <button onClick={() => setDeleteId(null)} className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg">{t.cancel}</button>
+                      <button onClick={() => handleDeleteGrammar(g.id)} className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg">{t.delete}</button>
                     </div>
                   </div>
                 ) : (

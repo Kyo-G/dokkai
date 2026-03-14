@@ -6,6 +6,7 @@ import { getGrammarDetails } from '../lib/ai'
 import { saveGrammarDetails, getUserExamplesForGrammar, type UserSentenceExample } from '../lib/db'
 import Furigana from './Furigana'
 import { useNavigate } from 'react-router-dom'
+import { getT } from '../lib/i18n'
 
 type UserExample = UserSentenceExample
 
@@ -38,6 +39,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
   }, [])
 
   const { settings } = useSettings()
+  const t = getT(settings.language)
   const navigate = useNavigate()
   const [userExamples, setUserExamples] = useState<UserExample[] | null>(null)
   const [aiDetails, setAiDetails] = useState<GrammarDetails | null>(
@@ -65,7 +67,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
       setLocalCache(grammar.pattern, d)
       if (grammar.id) await saveGrammarDetails(grammar.id, d).catch(() => {})
     } catch (e) {
-      setAiError(e instanceof Error ? e.message : '获取详情失败')
+      setAiError(e instanceof Error ? e.message : t.fetchGrammarFailed)
     } finally {
       setAiLoading(false)
     }
@@ -105,7 +107,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
           {/* 用法 — from sentence analysis, available immediately */}
           {grammar.usage && (
             <section>
-              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">用法</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{t.usageSection}</div>
               <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{grammar.usage}</div>
             </section>
           )}
@@ -114,11 +116,11 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
           <section>
             <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
               <BookOpen size={11} />
-              我读过的句子
+              {t.mySentences}
             </div>
             {userExamples === null ? (
               <div className="flex items-center gap-1.5 text-gray-400 text-sm">
-                <Loader2 size={14} className="animate-spin" /> 搜索中…
+                <Loader2 size={14} className="animate-spin" /> {t.searching}
               </div>
             ) : userExamples.length > 0 ? (
               <div className="space-y-2">
@@ -142,13 +144,13 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
                     onClick={() => setShowAllEx(v => !v)}
                     className="text-xs text-gray-400 dark:text-gray-500 underline w-full text-center pt-1"
                   >
-                    {showAllEx ? '收起' : `更多（共 ${userExamples.length} 句）`}
+                    {showAllEx ? t.collapse : t.more(userExamples.length)}
                   </button>
                 )}
               </div>
             ) : (
               <div className="text-sm text-gray-400 dark:text-gray-500 italic">
-                暂无 — 还没在文章中遇到过这个语法
+                {t.noGrammarSentences}
               </div>
             )}
           </section>
@@ -159,7 +161,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
               onClick={loadAiDetails}
               className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 w-full"
             >
-              <span className="text-xs uppercase tracking-wide font-medium">AI 用法解析</span>
+              <span className="text-xs uppercase tracking-wide font-medium">{t.aiUsageAnalysis}</span>
               {aiLoading
                 ? <Loader2 size={13} className="animate-spin ml-auto" />
                 : aiExpanded
@@ -171,7 +173,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
             {aiError && (
               <div className="text-red-600 text-sm mt-2 bg-red-50 dark:bg-red-950/30 rounded-lg p-2">
                 {aiError}
-                <button onClick={loadAiDetails} className="ml-2 underline">重试</button>
+                <button onClick={loadAiDetails} className="ml-2 underline">{t.retry}</button>
               </div>
             )}
 
@@ -179,13 +181,13 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
               <div className="mt-3 space-y-4 animate-fade-in-down">
                 {aiDetails.nuance && (
                   <div>
-                    <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">语感</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{t.nuance}</div>
                     <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{aiDetails.nuance}</div>
                   </div>
                 )}
                 {aiDetails.examples?.length > 0 && (
                   <div>
-                    <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">例句</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">{t.examples}</div>
                     <div className="space-y-3">
                       {aiDetails.examples.map((ex, i) => (
                         <div key={i} className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3">

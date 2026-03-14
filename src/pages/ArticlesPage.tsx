@@ -4,6 +4,8 @@ import { Plus, ChevronRight, Trash2, FileText, Loader2 } from 'lucide-react'
 import { getArticles, deleteArticle } from '../lib/db'
 import type { Article } from '../types'
 import { getProgress } from '../lib/progress'
+import { useSettings } from '../hooks/useSettings'
+import { getT } from '../lib/i18n'
 
 const LEVEL_COLORS: Record<string, string> = {
   N5: 'bg-green-100 text-green-700',
@@ -15,6 +17,8 @@ const LEVEL_COLORS: Record<string, string> = {
 
 export default function ArticlesPage() {
   const navigate = useNavigate()
+  const { settings } = useSettings()
+  const t = getT(settings.language)
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -39,14 +43,15 @@ export default function ArticlesPage() {
       await deleteArticle(id)
       setArticles(prev => prev.filter(a => a.id !== id))
     } catch (e) {
-      alert(e instanceof Error ? e.message : '删除失败')
+      alert(e instanceof Error ? e.message : t.delete)
     } finally {
       setDeleteId(null)
     }
   }
 
   function formatDate(str: string) {
-    return new Date(str).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+    const locale = settings.language === 'en' ? 'en-US' : 'zh-CN'
+    return new Date(str).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
   }
 
   return (
@@ -55,14 +60,14 @@ export default function ArticlesPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">読解</h1>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">日語精讀</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t.articlesSubtitle}</p>
         </div>
         <button
           onClick={() => navigate('/import')}
           className="flex items-center gap-1.5 bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-medium"
         >
           <Plus size={16} />
-          导入文章
+          {t.importArticle}
         </button>
       </div>
 
@@ -74,8 +79,8 @@ export default function ArticlesPage() {
       ) : articles.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <FileText size={48} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">还没有文章</p>
-          <p className="text-xs mt-1">点击「导入文章」开始精读</p>
+          <p className="text-sm">{t.noArticles}</p>
+          <p className="text-xs mt-1">{t.noArticlesHint}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -83,16 +88,16 @@ export default function ArticlesPage() {
             <div key={article.id} className="relative">
               {deleteId === article.id ? (
                 <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
-                  <span className="text-sm text-red-700">确认删除「{article.title}」？</span>
+                  <span className="text-sm text-red-700">{t.confirmDelete(article.title)}</span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => setDeleteId(null)}
                       className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-[#333] rounded-lg"
-                    >取消</button>
+                    >{t.cancel}</button>
                     <button
                       onClick={() => handleDelete(article.id)}
                       className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg"
-                    >删除</button>
+                    >{t.delete}</button>
                   </div>
                 </div>
               ) : (
@@ -128,7 +133,7 @@ export default function ArticlesPage() {
                               />
                             </div>
                             <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
-                              {prog.readIds.length}/{prog.total} 句
+                              {t.sentenceCount(prog.readIds.length)}/{t.sentenceCount(prog.total)}
                             </span>
                           </div>
                         )}

@@ -10,6 +10,7 @@ import { analyzeSentence } from '../lib/ai'
 import { useSettings } from '../hooks/useSettings'
 import { splitIntoSentences } from '../lib/sentences'
 import { useSpeech } from '../hooks/useSpeech'
+import { getT } from '../lib/i18n'
 
 const LEVEL_COLORS: Record<string, string> = {
   N5: 'bg-green-100 text-green-700',
@@ -43,6 +44,7 @@ export default function ArticleReadPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { settings } = useSettings()
+  const t = getT(settings.language)
   const [searchParams] = useSearchParams()
   const targetSentenceId = searchParams.get('sentence')
   const sentenceRefs = useRef<Record<string, HTMLElement | null>>({})
@@ -219,8 +221,8 @@ export default function ArticleReadPage() {
   if (error || !article) {
     return (
       <div className="px-4 py-8 text-center text-gray-500">
-        <p>{error || '文章不存在'}</p>
-        <button onClick={() => navigate('/')} className="mt-4 text-red-700 underline text-sm">返回</button>
+        <p>{error || t.articleNotFound}</p>
+        <button onClick={() => navigate('/')} className="mt-4 text-red-700 underline text-sm">{t.back}</button>
       </div>
     )
   }
@@ -246,10 +248,10 @@ export default function ArticleReadPage() {
               {preProgress
                 ? <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 flex items-center gap-1">
                     <Loader2 size={10} className="animate-spin" />
-                    预分析中 {preProgress.done}/{preProgress.total}
+                    {t.preAnalyzing(preProgress.done, preProgress.total)}
                   </p>
                 : <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                    {mode === 'read' ? '点击句子切换到精读' : '点击句子展开分析'}
+                    {mode === 'read' ? t.readModeHint : t.studyModeHint}
                   </p>
               }
             </div>
@@ -277,11 +279,11 @@ export default function ArticleReadPage() {
               <button
                 onClick={() => setMode('read')}
                 className={`px-2.5 py-1 rounded-md transition-colors ${mode === 'read' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 dark:text-gray-500'}`}
-              >通读</button>
+              >{t.readMode}</button>
               <button
                 onClick={() => { stop(); setSpeakingId(null); setMode('study') }}
                 className={`px-2.5 py-1 rounded-md transition-colors ${mode === 'study' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 dark:text-gray-500'}`}
-              >精读</button>
+              >{t.studyMode}</button>
             </div>
             {/* Furigana toggle */}
             <button
@@ -292,7 +294,7 @@ export default function ArticleReadPage() {
                   : 'border-gray-200 dark:border-[#444] text-gray-500 dark:text-gray-400'
               }`}
             >
-              {showFurigana ? '隐藏假名' : '显示假名'}
+              {showFurigana ? t.hideFurigana : t.showFurigana}
             </button>
           </div>
         </div>
@@ -308,7 +310,7 @@ export default function ArticleReadPage() {
       </div>
 
       {sentences.length === 0 ? (
-        <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-16">暂无句子数据</p>
+        <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-16">{t.noSentences}</p>
       ) : mode === 'read' ? (
         /* ── 通读模式 ── */
         <div className="px-5 py-8 pb-24">

@@ -7,18 +7,15 @@ import type { ReviewGrade } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
 import type { WordInSentence } from '../types'
 import { useSpeech } from '../hooks/useSpeech'
+import { useSettings } from '../hooks/useSettings'
+import { getT } from '../lib/i18n'
 
 type UserExample = UserSentenceExample
 
-const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string; emoji: string }[] = [
-  { grade: 0, label: '忘了', color: 'bg-red-100 text-red-700 border-red-200 active:bg-red-200',    emoji: '😣' },
-  { grade: 1, label: '模糊', color: 'bg-orange-100 text-orange-700 border-orange-200 active:bg-orange-200', emoji: '🤔' },
-  { grade: 2, label: '记得', color: 'bg-blue-100 text-blue-700 border-blue-200 active:bg-blue-200',  emoji: '😊' },
-  { grade: 3, label: '很熟', color: 'bg-green-100 text-green-700 border-green-200 active:bg-green-200',  emoji: '🎯' },
-]
-
 export default function ReviewPage() {
   const navigate = useNavigate()
+  const { settings } = useSettings()
+  const t = getT(settings.language)
   const [queue, setQueue] = useState<AnyReviewItem[]>([])
   const [loading, setLoading] = useState(true)
   const [flipped, setFlipped] = useState(false)
@@ -30,6 +27,13 @@ export default function ReviewPage() {
   const [showDetail, setShowDetail] = useState(false)
   const [userExamples, setUserExamples] = useState<UserExample[] | null>(null)
   const { speak, stop, speaking } = useSpeech()
+
+  const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string; emoji: string }[] = [
+    { grade: 0, label: t.forgot,    color: 'bg-red-100 text-red-700 border-red-200 active:bg-red-200',    emoji: '😣' },
+    { grade: 1, label: t.vague,     color: 'bg-orange-100 text-orange-700 border-orange-200 active:bg-orange-200', emoji: '🤔' },
+    { grade: 2, label: t.remember,  color: 'bg-blue-100 text-blue-700 border-blue-200 active:bg-blue-200',  emoji: '😊' },
+    { grade: 3, label: t.mastered,  color: 'bg-green-100 text-green-700 border-green-200 active:bg-green-200',  emoji: '🎯' },
+  ]
 
   useEffect(() => { load() }, [])
 
@@ -83,7 +87,7 @@ export default function ReviewPage() {
       setDone(prev => prev + 1)
       setFlipped(false)
     } catch (e) {
-      alert(e instanceof Error ? e.message : '提交失败')
+      alert(e instanceof Error ? e.message : t.vague)
     } finally {
       setSubmitting(false)
       setExiting(false)
@@ -93,7 +97,6 @@ export default function ReviewPage() {
   const current = queue[0]
   const progress = total > 0 ? (done / total) * 100 : 0
 
-  // Progress bar color: red → amber → green
   const barColor =
     progress >= 80 ? 'bg-green-500' :
     progress >= 40 ? 'bg-amber-500' :
@@ -111,14 +114,14 @@ export default function ReviewPage() {
   if (total > 0 && queue.length === 0) {
     const perfect = gradeMap[0] === 0 && gradeMap[1] === 0
     const strong  = (gradeMap[2] + gradeMap[3]) / total >= 0.8
-    const message = perfect ? '全部掌握，表现完美！' : strong ? '大部分都记住了，继续加油！' : '复习完成，坚持就是胜利！'
+    const message = perfect ? t.reviewCompletePerfect : strong ? t.reviewCompleteStrong : t.reviewCompleteOk
 
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
         <div className="text-7xl mb-5 animate-bounce-in select-none">
           {perfect ? '🏆' : strong ? '🎉' : '💪'}
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">今日复习完成！</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">{t.reviewComplete}</h2>
         <p className="text-sm text-gray-400 dark:text-gray-500 mb-6">{message}</p>
 
         {/* Grade breakdown */}
@@ -144,7 +147,7 @@ export default function ReviewPage() {
           onClick={load}
           className="px-6 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm text-gray-600 dark:text-gray-400"
         >
-          再次检查
+          {t.reviewAgain}
         </button>
       </div>
     )
@@ -154,10 +157,10 @@ export default function ReviewPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
         <Check size={56} className="text-green-500 mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">今天没有待复习内容</h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">先去阅读文章，收藏单词和语法吧</p>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{t.noReviewToday}</h2>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t.noReviewHint}</p>
         <button onClick={load} className="mt-6 px-6 py-2.5 border border-gray-200 dark:border-[#333] rounded-xl text-sm text-gray-600 dark:text-gray-400">
-          <RotateCcw size={16} className="inline mr-1" />刷新
+          <RotateCcw size={16} className="inline mr-1" />{t.refresh}
         </button>
       </div>
     )
@@ -177,7 +180,7 @@ export default function ReviewPage() {
       {/* Header + Progress */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">每日复习</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t.dailyReview}</h1>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-400 dark:text-gray-500 tabular-nums">
               {done} / {total}
@@ -199,16 +202,14 @@ export default function ReviewPage() {
             style={{ width: `${progress}%` }}
           />
         </div>
-        {/* Remaining label */}
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5 text-right">
-          还剩 {queue.length} 项
+          {t.remaining(queue.length)}
         </p>
       </div>
 
       {current && (
         <>
           <div className="flex-1 flex flex-col justify-center">
-            {/* Card — keyed by `done` so it re-mounts (triggers arrive anim) on each new card */}
             <button
               key={done}
               onClick={() => !flipped && !exiting && setFlipped(true)}
@@ -221,7 +222,7 @@ export default function ReviewPage() {
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                   isWord ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
                 }`}>
-                  {isWord ? '单词' : '语法'}
+                  {isWord ? t.wordBadge : t.grammarBadge}
                 </span>
               </div>
 
@@ -249,10 +250,10 @@ export default function ReviewPage() {
               )}
 
               {!flipped && (
-                <div className="text-sm text-gray-400 dark:text-gray-500 mt-4">点击翻转查看答案</div>
+                <div className="text-sm text-gray-400 dark:text-gray-500 mt-4">{t.tapToFlip}</div>
               )}
 
-              {/* Answer panel — animates in when flipped */}
+              {/* Answer panel */}
               {flipped && (
                 <div className="mt-4 space-y-3 text-left animate-flip-answer">
                   <div className="h-px bg-gray-100 dark:bg-[#2a2a2a]" />
@@ -274,7 +275,7 @@ export default function ReviewPage() {
                         )}
                         {userExamples && userExamples.length > 0 && (
                           <div className="space-y-2">
-                            <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">读过的例句</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">{t.readSentences}</div>
                             {userExamples.map((ex, i) => (
                               <button
                                 key={i}
@@ -298,7 +299,7 @@ export default function ReviewPage() {
                           onClick={e => { e.stopPropagation(); setShowDetail(true) }}
                           className="text-xs text-red-700 underline w-full text-center mt-1"
                         >
-                          查看详情
+                          {t.viewDetails}
                         </button>
                       </>
                     )
