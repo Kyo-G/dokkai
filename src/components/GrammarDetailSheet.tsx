@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { X, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import type { GrammarDetails } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getGrammarDetails } from '../lib/ai'
@@ -10,6 +10,7 @@ interface GrammarLike {
   id?: string
   pattern: string
   meaning: string
+  usage?: string
   jlpt?: string
   details_cache?: GrammarDetails | null
 }
@@ -29,28 +30,27 @@ function setLocalCache(pattern: string, d: GrammarDetails) {
 
 export default function GrammarDetailSheet({ grammar, onClose }: Props) {
   const { settings } = useSettings()
-  const [details, setDetails] = useState<GrammarDetails | null>(
+  const [aiDetails, setAiDetails] = useState<GrammarDetails | null>(
     grammar.details_cache || getLocalCache(grammar.pattern) || null
   )
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiExpanded, setAiExpanded] = useState(false)
 
-  useEffect(() => {
-    if (!details) fetchDetails()
-  }, [])
-
-  async function fetchDetails() {
-    setLoading(true)
-    setError('')
+  async function loadAiDetails() {
+    if (aiDetails) { setAiExpanded(v => !v); return }
+    setAiExpanded(true)
+    setAiLoading(true)
+    setAiError('')
     try {
       const d = await getGrammarDetails(settings, grammar.pattern, grammar.meaning)
-      setDetails(d)
+      setAiDetails(d)
       setLocalCache(grammar.pattern, d)
-      if (grammar.id) await saveGrammarDetails(grammar.id, d)
+      if (grammar.id) await saveGrammarDetails(grammar.id, d).catch(() => {})
     } catch (e) {
-      setError(e instanceof Error ? e.message : '获取详情失败')
+      setAiError(e instanceof Error ? e.message : '获取详情失败')
     } finally {
-      setLoading(false)
+      setAiLoading(false)
     }
   }
 
@@ -62,12 +62,12 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
-        <div className="flex justify-center pt-2 pb-1">
+        <div className="flex justify-center pt-2 pb-1 shrink-0">
           <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-start justify-between px-5 py-3 border-b border-gray-100 dark:border-[#2a2a2a]">
+        <div className="flex items-start justify-between px-5 py-3 border-b border-gray-100 dark:border-[#2a2a2a] shrink-0">
           <div>
             <div className="font-jp text-2xl font-bold text-amber-900 dark:text-amber-300" lang="ja">{grammar.pattern}</div>
             <div className="flex items-center gap-2 mt-0.5">
@@ -84,45 +84,61 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
 
         {/* Content */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
-          {loading && (
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 py-8 justify-center">
-              <Loader2 size={20} className="animate-spin" />
-              <span>正在获取详情…</span>
-            </div>
+
+          {/* 用法 — from sentence analysis, available immediately */}
+          {grammar.usage && (
+            <section>
+              <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">用法</div>
+              <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{grammar.usage}</div>
+            </section>
           )}
-          {error && (
-            <div className="text-red-600 text-sm bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
-              {error}
-              <button onClick={fetchDetails} className="ml-2 underline">重试</button>
-            </div>
-          )}
-          {details && (
-            <>
-              <div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">用法</div>
-                <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{details.usage}</div>
+
+          {/* AI 用法解析 — on demand */}
+          <section>
+            <button
+              onClick={loadAiDetails}
+              className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 w-full"
+            >
+              <span className="text-xs uppercase tracking-wide font-medium">AI 用法解析</span>
+              {aiLoading
+                ? <Loader2 size={13} className="animate-spin ml-auto" />
+                : aiExpanded
+                  ? <ChevronUp size={14} className="ml-auto" />
+                  : <ChevronDown size={14} className="ml-auto" />
+              }
+            </button>
+
+            {aiError && (
+              <div className="text-red-600 text-sm mt-2 bg-red-50 dark:bg-red-950/30 rounded-lg p-2">
+                {aiError}
+                <button onClick={loadAiDetails} className="ml-2 underline">重试</button>
               </div>
-              {details.nuance && (
-                <div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">语感</div>
-                  <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{details.nuance}</div>
-                </div>
-              )}
-              {details.examples?.length > 0 && (
-                <div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">例句</div>
-                  <div className="space-y-3">
-                    {details.examples.map((ex, i) => (
-                      <div key={i} className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3">
-                        <Furigana text={ex.japanese} className="font-jp text-gray-900 dark:text-gray-100 leading-loose" />
-                        <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">{ex.chinese}</div>
-                      </div>
-                    ))}
+            )}
+
+            {aiExpanded && aiDetails && (
+              <div className="mt-3 space-y-4 animate-fade-in-down">
+                {aiDetails.nuance && (
+                  <div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">语感</div>
+                    <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{aiDetails.nuance}</div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+                {aiDetails.examples?.length > 0 && (
+                  <div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">例句</div>
+                    <div className="space-y-3">
+                      {aiDetails.examples.map((ex, i) => (
+                        <div key={i} className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3">
+                          <Furigana text={ex.japanese} className="font-jp text-gray-900 dark:text-gray-100 leading-loose" />
+                          <div className="text-gray-500 dark:text-gray-400 text-sm mt-1">{ex.chinese}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>
