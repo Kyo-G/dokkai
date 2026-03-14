@@ -30,20 +30,38 @@ export async function getArticle(id: string): Promise<Article | null> {
   return data
 }
 
+/**
+ * Normalize article content before storing:
+ * - If the text has blank lines, treat them as paragraph separators and
+ *   strip intra-paragraph newlines so sentences within a paragraph flow together.
+ * - If no blank lines exist, keep as-is (each \n = paragraph separator).
+ * This ensures groupByParagraph can reliably reconstruct paragraph structure.
+ */
+function normalizeContent(raw: string): string {
+  const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  if (!/\n[ \t]*\n/.test(text)) return text  // no blank lines, keep as-is
+  return text
+    .split(/\n[ \t]*\n/)
+    .map(p => p.replace(/\n/g, '').trim())
+    .filter(p => p.length > 0)
+    .join('\n')
+}
+
 export async function createArticle(
   title: string,
   content: string,
   level: ArticleLevel
 ): Promise<Article> {
+  const normalized = normalizeContent(content)
   const { data, error } = await supabase
     .from('articles')
-    .insert({ title: title || '无标题', content, level })
+    .insert({ title: title || '无标题', content: normalized, level })
     .select()
     .single()
   if (error) throw error
 
   // Create sentences
-  const sentences = splitIntoSentences(content)
+  const sentences = splitIntoSentences(normalized)
   if (sentences.length > 0) {
     const rows = sentences.map((s, i) => ({
       article_id: data.id,
