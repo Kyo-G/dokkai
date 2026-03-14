@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Check, Volume2, Square, RefreshCw } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Volume2, Square, RefreshCw } from 'lucide-react'
 import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint } from '../types'
 import { analyzeSentence } from '../lib/ai'
 import { saveSentenceAnalysis, addGrammar, addWord } from '../lib/db'
@@ -226,32 +226,28 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                       const saving = savingGrammar === g.pattern
                       const isHidden = !isWordVisible(g.jlpt, settings.userLevel)
                       return (
-                        <div key={i} className={`bg-amber-50 dark:bg-amber-950/30 active:bg-amber-100 dark:active:bg-amber-900/40 rounded-xl p-3 cursor-pointer ${isHidden ? 'opacity-40' : ''}`} onClick={() => setSelectedGrammar(g)}>
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-2 flex-wrap">
+                        <SwipeableRow
+                          key={i}
+                          onSwipeRight={saved ? undefined : () => handleSaveGrammar(g)}
+                          rightAction={saved ? undefined : { bg: 'bg-green-500', icon: <BookmarkPlus size={20} className="text-white" /> }}
+                        >
+                          <div
+                            className={`rounded-xl p-3 cursor-pointer ${isHidden ? 'opacity-40' : ''} ${saved ? 'bg-green-50 dark:bg-green-950/20' : 'bg-amber-50 dark:bg-amber-950/30 active:bg-amber-100 dark:active:bg-amber-900/40'}`}
+                            onClick={() => setSelectedGrammar(g)}
+                          >
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
                               <span className="font-jp font-bold text-amber-900 dark:text-amber-300" lang="ja">{g.pattern}</span>
                               {g.jlpt && (
                                 <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">
                                   {g.jlpt}
                                 </span>
                               )}
+                              {saving && <Loader2 size={13} className="animate-spin text-amber-400 ml-auto" />}
                               <span className="text-amber-700 dark:text-amber-400 text-sm">— {g.meaning}</span>
                             </div>
-                            <button
-                              onClick={e => { e.stopPropagation(); !saved && handleSaveGrammar(g) }}
-                              className="shrink-0 mt-0.5"
-                              disabled={saving}
-                            >
-                              {saving
-                                ? <Loader2 size={15} className="animate-spin text-amber-400" />
-                                : saved
-                                  ? <Check size={15} className="text-green-600" />
-                                  : <BookmarkPlus size={15} className="text-amber-400" />
-                              }
-                            </button>
+                            <div className="text-gray-600 dark:text-gray-400 text-sm">{g.usage}</div>
                           </div>
-                          <div className="text-gray-600 dark:text-gray-400 text-sm">{g.usage}</div>
-                        </div>
+                        </SwipeableRow>
                       )
                     })}
                   </div>
@@ -290,7 +286,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                         onSwipeRight={wordSaved ? undefined : () => handleQuickSaveWord(w)}
                         rightAction={wordSaved ? undefined : { bg: 'bg-green-500', icon: <BookmarkPlus size={20} className="text-white" /> }}
                       >
-                      <div className={`${vocabIndex?.has(w.word) ? vocabCardClass(vocabIndex.get(w.word)!) : 'bg-gray-50 dark:bg-[#252525]'} active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2 ${wordHidden ? 'opacity-40' : ''}`}>
+                      <div className={`${wordSaved ? 'bg-green-50 dark:bg-green-950/20' : vocabIndex?.has(w.word) ? vocabCardClass(vocabIndex.get(w.word)!) : 'bg-gray-50 dark:bg-[#252525]'} active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2 ${wordHidden ? 'opacity-40' : ''}`}>
                         <button onClick={() => setSelectedWord(w)} className="flex-1 text-left">
                           <div className="flex items-center gap-2 flex-wrap">
                             <ruby className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">
@@ -307,23 +303,13 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                                 {w.jlpt}
                               </span>
                             )}
-<span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-[#333] rounded px-1.5 py-0.5">{w.pos}</span>
                           </div>
                           <div className="text-gray-600 dark:text-gray-400 text-sm mt-0.5">{w.meaning}</div>
                         </button>
-                        <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                          <button onClick={() => speak(w.word)} className="p-1 text-gray-300 dark:text-gray-600 active:text-gray-500">
-                            <Volume2 size={15} />
-                          </button>
-                          <div>
-                            {wordSaving
-                              ? <Loader2 size={15} className="animate-spin text-gray-300" />
-                              : wordSaved
-                                ? <Check size={15} className="text-green-500" />
-                                : <BookmarkPlus size={15} className="text-gray-300" />
-                            }
-                          </div>
-                        </div>
+                        <button onClick={() => speak(w.word)} className="p-1 text-gray-300 dark:text-gray-600 active:text-gray-500 shrink-0 mt-0.5">
+                          {wordSaving ? <Loader2 size={15} className="animate-spin" /> : <Volume2 size={15} />}
+                        </button>
                       </div>
                       </SwipeableRow>
                     )
