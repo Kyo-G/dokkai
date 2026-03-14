@@ -32,6 +32,11 @@ function setLocalCache(pattern: string, d: GrammarDetails) {
 }
 
 export default function GrammarDetailSheet({ grammar, onClose }: Props) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   const { settings } = useSettings()
   const navigate = useNavigate()
   const [userExamples, setUserExamples] = useState<UserExample[] | null>(null)

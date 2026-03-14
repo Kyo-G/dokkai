@@ -21,6 +21,11 @@ interface Props {
 }
 
 export default function WordDetailSheet({ wordInfo, articleId, sentenceId, existingWord, onClose }: Props) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   const { settings } = useSettings()
   const { speak, stop, speaking } = useSpeech()
   const navigate = useNavigate()
