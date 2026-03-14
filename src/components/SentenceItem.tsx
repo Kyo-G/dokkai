@@ -64,6 +64,8 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
   const [savingGrammar, setSavingGrammar] = useState<string | null>(null)
   const [savedWords, setSavedWords] = useState<Set<string>>(() => new Set(vocabIndex?.keys()))
   const [savingWord, setSavingWord] = useState<string | null>(null)
+  const [showHiddenGrammar, setShowHiddenGrammar] = useState(false)
+  const [showHiddenWords, setShowHiddenWords] = useState(false)
 
   async function runAnalysis() {
     setLoading(true)
@@ -201,75 +203,94 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             )}
 
             {/* Grammar */}
-            {analysis.grammar?.length > 0 && (
-              <div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">语法点</div>
-                <div className="space-y-2">
-                  {analysis.grammar.map((g, i) => {
-                    const saved = savedGrammars.has(g.pattern)
-                    const saving = savingGrammar === g.pattern
-                    return (
-                      <div key={i} className="bg-amber-50 dark:bg-amber-950/30 active:bg-amber-100 dark:active:bg-amber-900/40 rounded-xl p-3 cursor-pointer" onClick={() => setSelectedGrammar(g)}>
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-jp font-bold text-amber-900 dark:text-amber-300" lang="ja">{g.pattern}</span>
-                            {g.jlpt && (
-                              <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">
-                                {g.jlpt}
-                              </span>
-                            )}
-                            <span className="text-amber-700 dark:text-amber-400 text-sm">— {g.meaning}</span>
+            {analysis.grammar?.length > 0 && (() => {
+              const visibleGrammar = analysis.grammar.filter(g => isWordVisible(g.jlpt, settings.userLevel))
+              const hiddenGrammar = analysis.grammar.filter(g => !isWordVisible(g.jlpt, settings.userLevel))
+              const displayGrammar = showHiddenGrammar ? analysis.grammar : visibleGrammar
+              return (
+                <div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2 flex items-center gap-2">
+                    语法点
+                    {hiddenGrammar.length > 0 && (
+                      <button
+                        onClick={() => setShowHiddenGrammar(v => !v)}
+                        className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#333] rounded px-1.5 py-0.5 font-normal"
+                      >
+                        {showHiddenGrammar ? '收起简单语法' : `已隐藏 ${hiddenGrammar.length} 个简单语法`}
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {displayGrammar.map((g, i) => {
+                      const saved = savedGrammars.has(g.pattern)
+                      const saving = savingGrammar === g.pattern
+                      const isHidden = !isWordVisible(g.jlpt, settings.userLevel)
+                      return (
+                        <div key={i} className={`bg-amber-50 dark:bg-amber-950/30 active:bg-amber-100 dark:active:bg-amber-900/40 rounded-xl p-3 cursor-pointer ${isHidden ? 'opacity-40' : ''}`} onClick={() => setSelectedGrammar(g)}>
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-jp font-bold text-amber-900 dark:text-amber-300" lang="ja">{g.pattern}</span>
+                              {g.jlpt && (
+                                <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">
+                                  {g.jlpt}
+                                </span>
+                              )}
+                              <span className="text-amber-700 dark:text-amber-400 text-sm">— {g.meaning}</span>
+                            </div>
+                            <button
+                              onClick={e => { e.stopPropagation(); !saved && handleSaveGrammar(g) }}
+                              className="shrink-0 mt-0.5"
+                              disabled={saving}
+                            >
+                              {saving
+                                ? <Loader2 size={15} className="animate-spin text-amber-400" />
+                                : saved
+                                  ? <Check size={15} className="text-green-600" />
+                                  : <BookmarkPlus size={15} className="text-amber-400" />
+                              }
+                            </button>
                           </div>
-                          <button
-                            onClick={e => { e.stopPropagation(); !saved && handleSaveGrammar(g) }}
-                            className="shrink-0 mt-0.5"
-                            disabled={saving}
-                          >
-                            {saving
-                              ? <Loader2 size={15} className="animate-spin text-amber-400" />
-                              : saved
-                                ? <Check size={15} className="text-green-600" />
-                                : <BookmarkPlus size={15} className="text-amber-400" />
-                            }
-                          </button>
+                          <div className="text-gray-600 dark:text-gray-400 text-sm">{g.usage}</div>
                         </div>
-                        <div className="text-gray-600 dark:text-gray-400 text-sm">{g.usage}</div>
-                      </div>
-                    )
-                  })}
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* Words */}
             {analysis.words?.length > 0 && (() => {
-              const visible = analysis.words.filter(w =>
-                isWordVisible(w.jlpt, settings.userLevel) &&
-                // Skip punctuation-only tokens
-                /[\u3040-\u9fff\uff21-\uff3a\uff41-\uff5a\u0041-\u007a]/.test(w.word)
-              )
-              const hiddenCount = analysis.words.length - visible.length
+              const isPunct = (w: { word: string }) => !/[\u3040-\u9fff\uff21-\uff3a\uff41-\uff5a\u0041-\u007a]/.test(w.word)
+              const nonPunct = analysis.words.filter(w => !isPunct(w))
+              const visible = nonPunct.filter(w => isWordVisible(w.jlpt, settings.userLevel))
+              const hidden = nonPunct.filter(w => !isWordVisible(w.jlpt, settings.userLevel))
+              const display = showHiddenWords ? nonPunct : visible
               return (
               <div>
                 <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2 flex items-center gap-2">
                   单词列表
-                  {hiddenCount > 0 && (
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#333] rounded px-1.5 py-0.5 font-normal">
-                      已隐藏 {hiddenCount} 个简单词
-                    </span>
+                  {hidden.length > 0 && (
+                    <button
+                      onClick={() => setShowHiddenWords(v => !v)}
+                      className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-[#333] rounded px-1.5 py-0.5 font-normal"
+                    >
+                      {showHiddenWords ? '收起简单词' : `已隐藏 ${hidden.length} 个简单词`}
+                    </button>
                   )}
                 </div>
                 <div className="space-y-1">
-                  {visible.map((w, i) => {
+                  {display.map((w, i) => {
                     const wordSaved = savedWords.has(w.word)
                     const wordSaving = savingWord === w.word
+                    const wordHidden = !isWordVisible(w.jlpt, settings.userLevel)
                     return (
                       <SwipeableRow
                         key={`sw-${i}`}
                         onSwipeRight={wordSaved ? undefined : () => handleQuickSaveWord(w)}
                         rightAction={wordSaved ? undefined : { bg: 'bg-green-500', icon: <BookmarkPlus size={20} className="text-white" /> }}
                       >
-                      <div className={`${vocabIndex?.has(w.word) ? vocabCardClass(vocabIndex.get(w.word)!) : 'bg-gray-50 dark:bg-[#252525]'} active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2`}>
+                      <div className={`${vocabIndex?.has(w.word) ? vocabCardClass(vocabIndex.get(w.word)!) : 'bg-gray-50 dark:bg-[#252525]'} active:bg-gray-100 dark:active:bg-[#2a2a2a] rounded-xl p-3 flex items-start justify-between gap-2 ${wordHidden ? 'opacity-40' : ''}`}>
                         <button onClick={() => setSelectedWord(w)} className="flex-1 text-left">
                           <div className="flex items-center gap-2 flex-wrap">
                             <ruby className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">
