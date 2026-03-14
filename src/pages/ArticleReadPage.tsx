@@ -341,7 +341,7 @@ export default function ArticleReadPage() {
             <div
               key={sentence.id}
               ref={el => { sentenceRefs.current[sentence.id] = el }}
-              className={`rounded-2xl transition-all duration-700 ${highlightId === sentence.id ? 'ring-2 ring-red-400 ring-offset-2' : ''}`}
+              className={`rounded-2xl transition-all duration-700 ${highlightId === sentence.id ? 'font-bold' : ''}`}
             >
               <SentenceItem
                 sentence={sentence}
