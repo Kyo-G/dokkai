@@ -322,7 +322,7 @@ export default function ArticleReadPage() {
                     data-sid={s.id}
                     onClick={() => handleReadModeClick(s.id)}
                     className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
-                      ${speakingId === s.id ? 'font-bold text-gray-900 dark:text-gray-100' : readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
+                      ${speakingId === s.id ? 'font-bold text-gray-900 dark:text-gray-100' : highlightId === s.id ? 'font-bold text-gray-900 dark:text-gray-100 bg-amber-100 dark:bg-amber-900/40 rounded' : readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
                   >
                     {showFurigana && s.analysis_cache?.furigana
                       ? <Furigana text={s.analysis_cache.furigana} />
@@ -341,7 +341,7 @@ export default function ArticleReadPage() {
             <div
               key={sentence.id}
               ref={el => { sentenceRefs.current[sentence.id] = el }}
-              className={`rounded-2xl transition-all duration-700 ${highlightId === sentence.id ? 'font-bold' : ''}`}
+              className="rounded-2xl"
             >
               <SentenceItem
                 sentence={sentence}
