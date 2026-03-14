@@ -204,13 +204,6 @@ export default function ArticleReadPage() {
     }
   }
 
-  function switchToStudy(sentenceId: string) {
-    stop()
-    setSpeakingId(null)
-    setMode('study')
-    setJumpToId(sentenceId)
-  }
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
