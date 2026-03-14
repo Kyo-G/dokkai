@@ -245,15 +245,9 @@ export default function ArticleReadPage() {
                   </span>
                 )}
               </div>
-              {preProgress
-                ? <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 flex items-center gap-1">
-                    <Loader2 size={10} className="animate-spin" />
-                    {t.preAnalyzing(preProgress.done, preProgress.total)}
-                  </p>
-                : <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                    {mode === 'read' ? t.readModeHint : t.studyModeHint}
-                  </p>
-              }
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                {mode === 'read' ? t.readModeHint : t.studyModeHint}
+              </p>
             </div>
             {/* Play/stop button — read mode only */}
             {mode === 'read' && (
@@ -362,6 +356,35 @@ export default function ArticleReadPage() {
           ))}
         </div>
       )}
+
+      {/* Floating circular progress ring — shown during background pre-analysis */}
+      {preProgress && (() => {
+        const { done, total } = preProgress
+        const r = 20
+        const circumference = 2 * Math.PI * r
+        const offset = circumference * (1 - done / total)
+        return (
+          <div className="fixed bottom-6 right-4 z-50 drop-shadow-lg">
+            <svg width="52" height="52" viewBox="0 0 52 52" className="-rotate-90">
+              <circle cx="26" cy="26" r={r} fill="none" strokeWidth="4"
+                className="stroke-gray-200 dark:stroke-gray-700" />
+              <circle cx="26" cy="26" r={r} fill="none" strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                className="stroke-blue-500 dark:stroke-blue-400 transition-[stroke-dashoffset] duration-500" />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center rotate-0">
+              <span className="text-[10px] font-semibold text-gray-700 dark:text-gray-200 leading-none">
+                {total - done}
+              </span>
+              <span className="text-[8px] text-gray-400 dark:text-gray-500 leading-none mt-0.5">
+                left
+              </span>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
