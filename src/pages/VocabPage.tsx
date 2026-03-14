@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BookMarked, Trash2, ChevronRight, Loader2, Download, ExternalLink } from 'lucide-react'
+import { BookMarked, Trash2, ChevronRight, Loader2, ExternalLink } from 'lucide-react'
 import SwipeableRow from '../components/SwipeableRow'
 import { getWords, deleteWord, getGrammars, deleteGrammar } from '../lib/db'
 import type { Word, WordInSentence, SavedGrammar } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
 import GrammarDetailSheet from '../components/GrammarDetailSheet'
-
-import { isAudioCached, fetchTTS, storeBlob } from '../lib/audioCache'
 
 type Tab = 'words' | 'grammar'
 
@@ -20,9 +18,6 @@ export default function VocabPage() {
   const [selectedWord, setSelectedWord] = useState<Word | null>(null)
   const [selectedGrammar, setSelectedGrammar] = useState<SavedGrammar | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [caching, setCaching] = useState(false)
-  const [cacheProgress, setCacheProgress] = useState<{done: number, total: number} | null>(null)
-  const [cacheToast, setCacheToast] = useState<string | null>(null)
 
   useEffect(() => {
     load()
@@ -66,34 +61,6 @@ export default function VocabPage() {
     return { word: w.word, reading: w.reading, pos: w.pos, meaning: w.meaning }
   }
 
-  async function handleCacheAll() {
-    const uncached: string[] = []
-    for (const w of words) {
-      if (!(await isAudioCached(w.word))) uncached.push(w.word)
-    }
-    if (uncached.length === 0) {
-      showToast('读音已全部缓存 ✓')
-      return
-    }
-    setCaching(true)
-    setCacheProgress({ done: 0, total: uncached.length })
-    for (let i = 0; i < uncached.length; i++) {
-      try {
-        const blob = await fetchTTS(uncached[i])
-        await storeBlob(uncached[i], blob)
-      } catch { /* skip on error */ }
-      setCacheProgress({ done: i + 1, total: uncached.length })
-    }
-    setCaching(false)
-    setCacheProgress(null)
-    showToast('缓存完成 ✓')
-  }
-
-  function showToast(msg: string) {
-    setCacheToast(msg)
-    setTimeout(() => setCacheToast(null), 2500)
-  }
-
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
       {/* Header */}
@@ -102,18 +69,6 @@ export default function VocabPage() {
           <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">收藏</h1>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{words.length} 个单词 · {grammars.length} 个语法</p>
         </div>
-        {tab === 'words' && words.length > 0 && (
-          <button
-            onClick={handleCacheAll}
-            disabled={caching}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-[#333] text-sm text-gray-600 dark:text-gray-400 disabled:opacity-50"
-          >
-            {caching
-              ? <><Loader2 size={14} className="animate-spin" />{cacheProgress ? `${cacheProgress.done}/${cacheProgress.total}` : '…'}</>
-              : <><Download size={14} />缓存读音</>
-            }
-          </button>
-        )}
       </div>
 
       {/* Tabs */}
@@ -261,12 +216,6 @@ export default function VocabPage() {
           existingWord={selectedWord}
           onClose={() => setSelectedWord(null)}
         />
-      )}
-
-      {cacheToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-4 py-2 rounded-full shadow-lg z-50 whitespace-nowrap">
-          {cacheToast}
-        </div>
       )}
 
       {selectedGrammar && (
