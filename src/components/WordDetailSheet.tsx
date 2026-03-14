@@ -3,19 +3,14 @@ import { X, BookmarkPlus, Loader2, Check, Volume2, Square, ChevronDown, ChevronU
 import type { Word, WordDetails, WordInSentence } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getWordDetails } from '../lib/ai'
-import { addWord, saveWordDetails, getUserExamplesForWord } from '../lib/db'
+import { addWord, saveWordDetails, getUserExamplesForWord, type UserSentenceExample } from '../lib/db'
 import { lookupWordAsync, getDictStatus } from '../lib/dict'
 import type { DictEntry } from '../lib/dict'
 import { useSpeech } from '../hooks/useSpeech'
 import Furigana from './Furigana'
 import { useNavigate } from 'react-router-dom'
 
-interface UserExample {
-  content: string
-  furigana?: string
-  articleTitle: string
-  articleId: string
-}
+type UserExample = UserSentenceExample
 
 interface Props {
   wordInfo: WordInSentence
@@ -186,7 +181,7 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
                 {(showAllEx ? userExamples : userExamples.slice(0, 2)).map((ex, i) => (
                   <button
                     key={i}
-                    onClick={() => { onClose(); navigate(`/article/${ex.articleId}`) }}
+                    onClick={() => { onClose(); navigate(`/article/${ex.articleId}?sentence=${ex.sentenceId}`) }}
                     className="w-full text-left bg-red-50 dark:bg-red-950/20 rounded-xl p-3 active:bg-red-100 dark:active:bg-red-950/40"
                   >
                     <div className="font-jp text-sm text-gray-800 dark:text-gray-200 leading-relaxed" lang="ja">

@@ -312,52 +312,50 @@ export async function submitGrammarReview(
   if (error) throw error
 }
 
+export type UserSentenceExample = {
+  sentenceId: string
+  content: string
+  furigana?: string
+  articleTitle: string
+  articleId: string
+}
+
+function mapExamples(data: unknown[]): UserSentenceExample[] {
+  return data.map((s: unknown) => {
+    const row = s as { id: string; content: string; analysis_cache: unknown; article_id: string; articles?: { title: string } | null }
+    return {
+      sentenceId:   row.id,
+      content:      row.content,
+      furigana:     (row.analysis_cache as { furigana?: string } | null)?.furigana,
+      articleTitle: row.articles?.title ?? '未知文章',
+      articleId:    row.article_id,
+    }
+  })
+}
+
 /** Find the user's own analyzed sentences that contain this grammar pattern. */
-export async function getUserExamplesForGrammar(
-  pattern: string
-): Promise<{ content: string; furigana?: string; articleTitle: string; articleId: string }[]> {
+export async function getUserExamplesForGrammar(pattern: string): Promise<UserSentenceExample[]> {
   const { data, error } = await supabase
     .from('sentences')
-    .select('content, analysis_cache, article_id, articles(title)')
+    .select('id, content, analysis_cache, article_id, articles(title)')
     .filter('analysis_cache', 'cs', JSON.stringify({ grammar: [{ pattern }] }))
     .limit(5)
   if (error) throw error
-
-  return (data || [])
-    .slice(0, 4)
-    .map(s => ({
-      content:      s.content,
-      furigana:     (s.analysis_cache as { furigana?: string } | null)?.furigana,
-      articleTitle: (s as unknown as { articles?: { title: string } | null }).articles?.title ?? '未知文章',
-      articleId:    s.article_id,
-    }))
+  return mapExamples(data || [])
 }
 
 /**
  * Find the user's own analyzed sentences that contain this word.
- * Uses a substring match on content (works for Japanese, no spaces).
+ * Uses JSONB @> to match what the AI stored in analysis_cache.
  */
-export async function getUserExamplesForWord(
-  word: string
-): Promise<{ content: string; furigana?: string; articleTitle: string; articleId: string }[]> {
-  // Use JSONB @> (contains) to search inside analysis_cache directly.
-  // This correctly finds the word regardless of inflection, because we match
-  // what the AI stored in the analysis, not the raw sentence text.
+export async function getUserExamplesForWord(word: string): Promise<UserSentenceExample[]> {
   const { data, error } = await supabase
     .from('sentences')
-    .select('content, analysis_cache, article_id, articles(title)')
+    .select('id, content, analysis_cache, article_id, articles(title)')
     .filter('analysis_cache', 'cs', JSON.stringify({ words: [{ word }] }))
     .limit(5)
   if (error) throw error
-
-  return (data || [])
-    .slice(0, 4)
-    .map(s => ({
-      content:      s.content,
-      furigana:     (s.analysis_cache as { furigana?: string } | null)?.furigana,
-      articleTitle: (s as unknown as { articles?: { title: string } | null }).articles?.title ?? '未知文章',
-      articleId:    s.article_id,
-    }))
+  return mapExamples(data || [])
 }
 
 export async function submitReview(

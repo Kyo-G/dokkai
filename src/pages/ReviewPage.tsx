@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { RotateCcw, Check, Loader2, Volume2, Square } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { getDueReviews, submitReview, submitGrammarReview, getUserExamplesForWord } from '../lib/db'
+import { getDueReviews, submitReview, submitGrammarReview, getUserExamplesForWord, type UserSentenceExample } from '../lib/db'
 import type { AnyReviewItem } from '../lib/db'
 import type { ReviewGrade } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
 import type { WordInSentence } from '../types'
 import { useSpeech } from '../hooks/useSpeech'
 
-type UserExample = { content: string; furigana?: string; articleTitle: string; articleId: string }
+type UserExample = UserSentenceExample
 
 const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string; emoji: string }[] = [
   { grade: 0, label: '忘了', color: 'bg-red-100 text-red-700 border-red-200 active:bg-red-200',    emoji: '😣' },
@@ -278,7 +278,7 @@ export default function ReviewPage() {
                             {userExamples.map((ex, i) => (
                               <button
                                 key={i}
-                                onClick={e => { e.stopPropagation(); navigate(`/article/${ex.articleId}`) }}
+                                onClick={e => { e.stopPropagation(); navigate(`/article/${ex.articleId}?sentence=${ex.sentenceId}`) }}
                                 className="w-full text-left bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3"
                               >
                                 <div className="font-jp text-sm text-gray-700 dark:text-gray-300 leading-relaxed" lang="ja">{ex.content}</div>

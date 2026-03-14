@@ -3,11 +3,11 @@ import { X, Loader2, ChevronDown, ChevronUp, BookOpen } from 'lucide-react'
 import type { GrammarDetails } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getGrammarDetails } from '../lib/ai'
-import { saveGrammarDetails, getUserExamplesForGrammar } from '../lib/db'
+import { saveGrammarDetails, getUserExamplesForGrammar, type UserSentenceExample } from '../lib/db'
 import Furigana from './Furigana'
 import { useNavigate } from 'react-router-dom'
 
-type UserExample = { content: string; furigana?: string; articleTitle: string; articleId: string }
+type UserExample = UserSentenceExample
 
 interface GrammarLike {
   id?: string
@@ -120,7 +120,7 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
                 {(showAllEx ? userExamples : userExamples.slice(0, 2)).map((ex, i) => (
                   <button
                     key={i}
-                    onClick={() => { onClose(); navigate(`/article/${ex.articleId}`) }}
+                    onClick={() => { onClose(); navigate(`/article/${ex.articleId}?sentence=${ex.sentenceId}`) }}
                     className="w-full text-left bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 active:bg-amber-100 dark:active:bg-amber-950/40"
                   >
                     <div className="font-jp text-sm text-gray-800 dark:text-gray-200 leading-relaxed" lang="ja">
