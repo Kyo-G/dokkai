@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, ChevronRight, Trash2, FileText, Loader2 } from 'lucide-react'
+import { Plus, ChevronRight, Trash2, Pencil, FileText, Loader2 } from 'lucide-react'
 import { getArticles, deleteArticle } from '../lib/db'
 import type { Article } from '../types'
 import { getProgress } from '../lib/progress'
@@ -140,6 +140,12 @@ export default function ArticlesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={e => { e.preventDefault(); navigate(`/import?edit=${article.id}`) }}
+                        className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-400"
+                      >
+                        <Pencil size={15} />
+                      </button>
                       <button
                         onClick={e => { e.preventDefault(); setDeleteId(article.id) }}
                         className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400"

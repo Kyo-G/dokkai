@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { createArticle } from '../lib/db'
+import { createArticle, updateArticle, getArticle } from '../lib/db'
 import type { ArticleLevel } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getT } from '../lib/i18n'
@@ -10,23 +10,50 @@ const LEVELS: ArticleLevel[] = ['', 'N5', 'N4', 'N3', 'N2', 'N1']
 
 export default function ImportPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const editId = searchParams.get('edit')
   const { settings } = useSettings()
   const t = getT(settings.language)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [level, setLevel] = useState<ArticleLevel>('')
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(!!editId)
+
+  useEffect(() => {
+    if (!editId) return
+    getArticle(editId).then(article => {
+      if (article) {
+        setTitle(article.title)
+        setContent(article.content)
+        setLevel(article.level)
+      }
+    }).finally(() => setLoading(false))
+  }, [editId])
 
   async function handleSave() {
     if (!content.trim()) return
     setSaving(true)
     try {
-      const article = await createArticle(title.trim(), content.trim(), level)
-      navigate(`/article/${article.id}`, { replace: true })
+      if (editId) {
+        await updateArticle(editId, title.trim(), content.trim(), level)
+        navigate(`/article/${editId}`, { replace: true })
+      } else {
+        const article = await createArticle(title.trim(), content.trim(), level)
+        navigate(`/article/${article.id}`, { replace: true })
+      }
     } catch (e) {
       alert(e instanceof Error ? e.message : t.save)
       setSaving(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-dvh bg-[#f8f7f4] dark:bg-[#111] items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    )
   }
 
   return (
@@ -36,7 +63,9 @@ export default function ImportPage() {
         <button onClick={() => navigate(-1)} className="p-1 text-gray-500 dark:text-gray-400">
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 flex-1">{t.importPageTitle}</h1>
+        <h1 className="text-base font-bold text-gray-900 dark:text-gray-100 flex-1">
+          {editId ? t.editPageTitle : t.importPageTitle}
+        </h1>
         <button
           onClick={handleSave}
           disabled={!content.trim() || saving}

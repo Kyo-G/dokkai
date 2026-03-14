@@ -15,8 +15,9 @@ export const zh = {
   delete: '删除',
   sentenceCount: (n: number) => `${n} 句`,
 
-  // ImportPage
+  // ImportPage / EditPage
   importPageTitle: '导入新文章',
+  editPageTitle: '编辑文章',
   save: '保存',
   titleLabel: '标题（选填）',
   titlePlaceholder: '文章标题',
@@ -145,8 +146,9 @@ export const en: Translations = {
   delete: 'Delete',
   sentenceCount: (n: number) => `${n} sentences`,
 
-  // ImportPage
+  // ImportPage / EditPage
   importPageTitle: 'Import Article',
+  editPageTitle: 'Edit Article',
   save: 'Save',
   titleLabel: 'Title (optional)',
   titlePlaceholder: 'Article title',

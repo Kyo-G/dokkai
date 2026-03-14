@@ -81,6 +81,35 @@ export async function deleteArticle(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function updateArticle(
+  id: string,
+  title: string,
+  content: string,
+  level: ArticleLevel
+): Promise<void> {
+  const normalized = normalizeContent(content)
+
+  const { error: updateError } = await supabase
+    .from('articles')
+    .update({ title: title || '无标题', content: normalized, level })
+    .eq('id', id)
+  if (updateError) throw updateError
+
+  // Replace sentences
+  await supabase.from('sentences').delete().eq('article_id', id)
+  const sentences = splitIntoSentences(normalized)
+  if (sentences.length > 0) {
+    const rows = sentences.map((s, i) => ({
+      article_id: id,
+      content: s,
+      position: i,
+      is_analyzed: false,
+      analysis_cache: null,
+    }))
+    await supabase.from('sentences').insert(rows)
+  }
+}
+
 // ──────────────────────────────────────────────
 // Sentences
 // ──────────────────────────────────────────────
