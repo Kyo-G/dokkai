@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import { RotateCcw, Check, Loader2, Volume2, Square } from 'lucide-react'
-import { getDueReviews, submitReview, submitGrammarReview } from '../lib/db'
+import { useNavigate } from 'react-router-dom'
+import { getDueReviews, submitReview, submitGrammarReview, getUserExamplesForWord } from '../lib/db'
 import type { AnyReviewItem } from '../lib/db'
 import type { ReviewGrade } from '../types'
 import WordDetailSheet from '../components/WordDetailSheet'
 import type { WordInSentence } from '../types'
 import { useSpeech } from '../hooks/useSpeech'
+
+type UserExample = { content: string; furigana?: string; articleTitle: string; articleId: string }
 
 const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string; emoji: string }[] = [
   { grade: 0, label: '忘了', color: 'bg-red-100 text-red-700 border-red-200 active:bg-red-200',    emoji: '😣' },
@@ -15,6 +18,7 @@ const GRADE_BUTTONS: { grade: ReviewGrade; label: string; color: string; emoji: 
 ]
 
 export default function ReviewPage() {
+  const navigate = useNavigate()
   const [queue, setQueue] = useState<AnyReviewItem[]>([])
   const [loading, setLoading] = useState(true)
   const [flipped, setFlipped] = useState(false)
@@ -24,9 +28,24 @@ export default function ReviewPage() {
   const [total, setTotal] = useState(0)
   const [gradeMap, setGradeMap] = useState<Record<number, number>>({ 0: 0, 1: 0, 2: 0, 3: 0 })
   const [showDetail, setShowDetail] = useState(false)
+  const [userExamples, setUserExamples] = useState<UserExample[] | null>(null)
   const { speak, stop, speaking } = useSpeech()
 
   useEffect(() => { load() }, [])
+
+  // Fetch user's own sentences containing this word when the card is flipped
+  useEffect(() => {
+    const current = queue[0]
+    if (!flipped || !current || current.type !== 'word') {
+      setUserExamples(null)
+      return
+    }
+    const word = (current as Extract<AnyReviewItem, { type: 'word' }>).word.word
+    setUserExamples(null)
+    getUserExamplesForWord(word)
+      .then(setUserExamples)
+      .catch(() => setUserExamples([]))
+  }, [flipped, done])
 
   async function load() {
     setLoading(true)
@@ -247,8 +266,30 @@ export default function ReviewPage() {
                           <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">{w.pos}</div>
                         </div>
                         <div className="text-center text-lg text-gray-900 dark:text-gray-100 font-medium">{w.meaning}</div>
-                        {w.details_cache?.examples?.[0] && (
-                          <div className="bg-gray-50 dark:bg-[#252525] rounded-xl p-3 mt-2">
+                        {/* User's own read sentences */}
+                        {userExamples === null && (
+                          <div className="flex justify-center py-1">
+                            <Loader2 size={13} className="animate-spin text-gray-300 dark:text-gray-600" />
+                          </div>
+                        )}
+                        {userExamples && userExamples.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="text-xs text-gray-400 dark:text-gray-500 font-medium">读过的例句</div>
+                            {userExamples.map((ex, i) => (
+                              <button
+                                key={i}
+                                onClick={e => { e.stopPropagation(); navigate(`/article/${ex.articleId}`) }}
+                                className="w-full text-left bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3"
+                              >
+                                <div className="font-jp text-sm text-gray-700 dark:text-gray-300 leading-relaxed" lang="ja">{ex.content}</div>
+                                <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">— {ex.articleTitle}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {/* AI example as fallback */}
+                        {userExamples?.length === 0 && w.details_cache?.examples?.[0] && (
+                          <div className="bg-gray-50 dark:bg-[#252525] rounded-xl p-3">
                             <div className="font-jp text-sm text-gray-700 dark:text-gray-300" lang="ja">{w.details_cache.examples[0].japanese}</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{w.details_cache.examples[0].chinese}</div>
                           </div>
