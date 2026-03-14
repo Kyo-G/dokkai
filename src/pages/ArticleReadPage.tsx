@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Play, Square } from 'lucide-react'
 import { getArticle, getSentences, saveSentenceAnalysis, getVocabIndex } from '../lib/db'
 import { getProgress, markSentenceRead, saveReadPosition, saveMode } from '../lib/progress'
 import type { Article, Sentence, SentenceAnalysis } from '../types'
@@ -9,6 +9,7 @@ import Furigana from '../components/Furigana'
 import { analyzeSentence } from '../lib/ai'
 import { useSettings } from '../hooks/useSettings'
 import { splitIntoSentences } from '../lib/sentences'
+import { useSpeech } from '../hooks/useSpeech'
 
 const LEVEL_COLORS: Record<string, string> = {
   N5: 'bg-green-100 text-green-700',
@@ -55,6 +56,8 @@ export default function ArticleReadPage() {
   const [jumpToId, setJumpToId] = useState<string | null>(null)
   const lastSeenRef = useRef<string | null>(null)
   const [vocabIndex, setVocabIndex] = useState<Map<string, number>>(new Map())
+  const [speakingId, setSpeakingId] = useState<string | null>(null)
+  const { speak: _speak, stop, speaking, speakSequence } = useSpeech()
 
   useEffect(() => {
     if (id) load(id)
@@ -175,7 +178,35 @@ export default function ArticleReadPage() {
     return () => { save(); document.removeEventListener('visibilitychange', save) }
   }, [id, mode])
 
+  // Auto-scroll to currently speaking sentence
+  useEffect(() => {
+    if (speakingId && mode === 'read') {
+      sentenceRefs.current[speakingId]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [speakingId, mode])
+
+  // Stop reading when component unmounts
+  useEffect(() => () => stop(), [])
+
+  const startReading = useCallback((fromIndex: number) => {
+    const items = sentences.map(s => ({ id: s.id, text: s.content }))
+    speakSequence(items, fromIndex, setSpeakingId)
+  }, [sentences, speakSequence])
+
+  function handleReadModeClick(sentenceId: string) {
+    const idx = sentences.findIndex(s => s.id === sentenceId)
+    if (idx < 0) return
+    if (speaking && speakingId === sentenceId) {
+      stop()
+      setSpeakingId(null)
+    } else {
+      startReading(idx)
+    }
+  }
+
   function switchToStudy(sentenceId: string) {
+    stop()
+    setSpeakingId(null)
     setMode('study')
     setJumpToId(sentenceId)
   }
@@ -225,6 +256,25 @@ export default function ArticleReadPage() {
                   </p>
               }
             </div>
+            {/* Play/stop button — read mode only */}
+            {mode === 'read' && (
+              <button
+                onClick={() => {
+                  if (speaking) { stop(); setSpeakingId(null) }
+                  else startReading(0)
+                }}
+                className={`shrink-0 p-1.5 rounded-lg transition-colors ${
+                  speaking
+                    ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30'
+                    : 'text-gray-400 dark:text-gray-500 active:text-gray-700'
+                }`}
+              >
+                {speaking
+                  ? <Square size={16} fill="currentColor" />
+                  : <Play size={16} fill="currentColor" />
+                }
+              </button>
+            )}
             {/* Mode toggle */}
             <div className="flex shrink-0 bg-gray-100 dark:bg-[#2a2a2a] rounded-lg p-0.5 text-xs font-medium">
               <button
@@ -232,7 +282,7 @@ export default function ArticleReadPage() {
                 className={`px-2.5 py-1 rounded-md transition-colors ${mode === 'read' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 dark:text-gray-500'}`}
               >通读</button>
               <button
-                onClick={() => setMode('study')}
+                onClick={() => { stop(); setSpeakingId(null); setMode('study') }}
                 className={`px-2.5 py-1 rounded-md transition-colors ${mode === 'study' ? 'bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 shadow-sm' : 'text-gray-400 dark:text-gray-500'}`}
               >精读</button>
             </div>
@@ -274,9 +324,9 @@ export default function ArticleReadPage() {
                     key={s.id}
                     ref={el => { sentenceRefs.current[s.id] = el as HTMLButtonElement | null }}
                     data-sid={s.id}
-                    onClick={() => switchToStudy(s.id)}
+                    onClick={() => handleReadModeClick(s.id)}
                     className={`inline text-left rounded transition-colors duration-150 active:bg-amber-100 dark:active:bg-amber-900/30
-                      ${readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
+                      ${speakingId === s.id ? 'font-bold text-gray-900 dark:text-gray-100' : readIds.has(s.id) ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}
                   >
                     {showFurigana && s.analysis_cache?.furigana
                       ? <Furigana text={s.analysis_cache.furigana} />

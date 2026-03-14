@@ -23,51 +23,87 @@ function resolveJapaneseVoice(): Promise<SpeechSynthesisVoice | null> {
 export function useSpeech() {
   const [speaking, setSpeaking] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const cancelRef = useRef(false)
+  // Called when we need to abort the currently-playing item mid-way
+  const stopCurrentRef = useRef<(() => void) | null>(null)
 
-  const speak = useCallback(async (text: string) => {
-    // Stop anything playing
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
-    }
+  const stop = useCallback(() => {
+    cancelRef.current = true
+    if (stopCurrentRef.current) { stopCurrentRef.current(); stopCurrentRef.current = null }
     window.speechSynthesis?.cancel()
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    setSpeaking(false)
+  }, [])
 
-    // Prefer local Japanese voice if available
+  /** Speak a single text. Resolves when done (or when stop() is called). */
+  const speakOne = useCallback(async (text: string): Promise<void> => {
+    if (cancelRef.current) return
+
     const jaVoice = await resolveJapaneseVoice()
+    if (cancelRef.current) return
+
     if (jaVoice) {
-      const utter = new SpeechSynthesisUtterance(text)
-      utter.lang = 'ja-JP'
-      utter.voice = jaVoice
-      utter.rate = 0.9
-      utter.onstart = () => setSpeaking(true)
-      utter.onend = () => setSpeaking(false)
-      utter.onerror = () => setSpeaking(false)
-      window.speechSynthesis.speak(utter)
+      await new Promise<void>(resolve => {
+        stopCurrentRef.current = () => { window.speechSynthesis.cancel(); resolve() }
+        const utter = new SpeechSynthesisUtterance(text)
+        utter.lang = 'ja-JP'
+        utter.voice = jaVoice
+        utter.rate = 0.9
+        utter.onend = () => { stopCurrentRef.current = null; resolve() }
+        utter.onerror = () => { stopCurrentRef.current = null; resolve() }
+        window.speechSynthesis.speak(utter)
+      })
       return
     }
 
     // Fallback: fetch via proxy (with IndexedDB cache)
-    setSpeaking(true)
     try {
       const url = await getAudioUrl(text)
-      const audio = new Audio(url)
-      audio.onended = () => { setSpeaking(false); audioRef.current = null }
-      audio.onerror = () => { setSpeaking(false); audioRef.current = null }
-      audioRef.current = audio
-      await audio.play()
-    } catch {
-      setSpeaking(false)
-    }
+      if (cancelRef.current) return
+      await new Promise<void>(resolve => {
+        const audio = new Audio(url)
+        audioRef.current = audio
+        const done = () => { stopCurrentRef.current = null; audioRef.current = null; resolve() }
+        audio.onended = done
+        audio.onerror = done
+        stopCurrentRef.current = () => { audio.pause(); done() }
+        audio.play().catch(done)
+      })
+    } catch { /* ignore */ }
   }, [])
 
-  const stop = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
+  /** Speak a single text (one-shot). */
+  const speak = useCallback(async (text: string) => {
+    stop()
+    cancelRef.current = false
+    setSpeaking(true)
+    await speakOne(text)
+    if (!cancelRef.current) setSpeaking(false)
+  }, [stop, speakOne])
+
+  /**
+   * Speak a sequence of items one by one.
+   * @param items     Array of { id, text } to speak in order.
+   * @param startIndex Index to start from.
+   * @param onItem    Called with the current item's id before it is spoken,
+   *                  and with null when the sequence ends or is stopped.
+   */
+  const speakSequence = useCallback(async (
+    items: { id: string; text: string }[],
+    startIndex: number,
+    onItem: (id: string | null) => void,
+  ) => {
+    stop()
+    cancelRef.current = false
+    setSpeaking(true)
+    for (let i = startIndex; i < items.length; i++) {
+      if (cancelRef.current) break
+      onItem(items[i].id)
+      await speakOne(items[i].text)
     }
-    window.speechSynthesis?.cancel()
+    onItem(null)
     setSpeaking(false)
-  }, [])
+  }, [stop, speakOne])
 
-  return { speak, stop, speaking }
+  return { speak, stop, speaking, speakSequence }
 }
