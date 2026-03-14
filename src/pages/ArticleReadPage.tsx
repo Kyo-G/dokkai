@@ -22,15 +22,19 @@ const LEVEL_COLORS: Record<string, string> = {
 type Mode = 'read' | 'study'
 
 function groupByParagraph(content: string, sentences: Sentence[]): Sentence[][] {
-  const paragraphs = content.split('\n').filter(p => p.trim().length > 0)
+  // Prefer blank-line paragraph splitting; fall back to single-newline if none exist.
+  const byBlankLine = content.split(/\n[ \t]*\n/)
+  const paraTexts = byBlankLine.length > 1
+    ? byBlankLine.map(p => p.trim()).filter(p => p.length > 0)
+    : content.split('\n').filter(p => p.trim().length > 0)
+
   const groups: Sentence[][] = []
   let idx = 0
-  for (const para of paragraphs) {
+  for (const para of paraTexts) {
     const count = splitIntoSentences(para).length
     groups.push(sentences.slice(idx, idx + count))
     idx += count
   }
-  // Leftover sentences (if any) go into the last group
   if (idx < sentences.length) groups.push(sentences.slice(idx))
   return groups.filter(g => g.length > 0)
 }
@@ -310,8 +314,7 @@ export default function ArticleReadPage() {
         <div className="px-5 py-8 pb-24">
           <div className="font-jp text-[17px] leading-[2.2]" lang="ja">
             {groupByParagraph(article.content, sentences).map((group, gi) => (
-              <span key={gi}>
-                {gi > 0 && <br />}
+              <p key={gi} className="mb-[1em]">
                 {group.map(s => (
                   <button
                     key={s.id}
@@ -327,7 +330,7 @@ export default function ArticleReadPage() {
                     }
                   </button>
                 ))}
-              </span>
+              </p>
             ))}
           </div>
         </div>
