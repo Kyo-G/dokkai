@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { BookMarked, Trash2, ChevronRight, Loader2, ExternalLink } from 'lucide-react'
+import { BookMarked, Trash2, ChevronRight, Loader2 } from 'lucide-react'
 import SwipeableRow from '../components/SwipeableRow'
 import { getWords, deleteWord, getGrammars, deleteGrammar } from '../lib/db'
 import type { Word, WordInSentence, SavedGrammar } from '../types'
@@ -10,7 +9,6 @@ import GrammarDetailSheet from '../components/GrammarDetailSheet'
 type Tab = 'words' | 'grammar'
 
 export default function VocabPage() {
-  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('words')
   const [words, setWords] = useState<Word[]>([])
   const [grammars, setGrammars] = useState<SavedGrammar[]>([])
@@ -171,19 +169,6 @@ export default function VocabPage() {
                           </div>
                           <div className="text-sm text-gray-700 dark:text-gray-300 mt-0.5">{g.meaning}</div>
                           {g.usage && <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 line-clamp-1">{g.usage}</div>}
-                          {g.article_title && (
-                            <div className="text-xs text-gray-300 dark:text-gray-600 mt-0.5 truncate flex items-center gap-1">
-                              来自：{g.article_title}
-                              {g.article_id && (
-                                <button
-                                  onClick={e => { e.stopPropagation(); navigate(`/article/${g.article_id}${g.sentence_id ? `?sentence=${g.sentence_id}` : ''}`) }}
-                                  className="text-gray-300 dark:text-gray-600 hover:text-red-400 shrink-0"
-                                >
-                                  <ExternalLink size={11} />
-                                </button>
-                              )}
-                            </div>
-                          )}
                         </div>
                         <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 shrink-0" />
                       </button>
