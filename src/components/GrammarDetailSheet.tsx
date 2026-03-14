@@ -1,10 +1,13 @@
-import { useState } from 'react'
-import { X, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Loader2, ChevronDown, ChevronUp, BookOpen } from 'lucide-react'
 import type { GrammarDetails } from '../types'
 import { useSettings } from '../hooks/useSettings'
 import { getGrammarDetails } from '../lib/ai'
-import { saveGrammarDetails } from '../lib/db'
+import { saveGrammarDetails, getUserExamplesForGrammar } from '../lib/db'
 import Furigana from './Furigana'
+import { useNavigate } from 'react-router-dom'
+
+type UserExample = { content: string; furigana?: string; articleTitle: string; articleId: string }
 
 interface GrammarLike {
   id?: string
@@ -30,12 +33,21 @@ function setLocalCache(pattern: string, d: GrammarDetails) {
 
 export default function GrammarDetailSheet({ grammar, onClose }: Props) {
   const { settings } = useSettings()
+  const navigate = useNavigate()
+  const [userExamples, setUserExamples] = useState<UserExample[] | null>(null)
   const [aiDetails, setAiDetails] = useState<GrammarDetails | null>(
     grammar.details_cache || getLocalCache(grammar.pattern) || null
   )
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiExpanded, setAiExpanded] = useState(false)
+  const [showAllEx, setShowAllEx] = useState(false)
+
+  useEffect(() => {
+    getUserExamplesForGrammar(grammar.pattern)
+      .then(setUserExamples)
+      .catch(() => setUserExamples([]))
+  }, [grammar.pattern])
 
   async function loadAiDetails() {
     if (aiDetails) { setAiExpanded(v => !v); return }
@@ -92,6 +104,49 @@ export default function GrammarDetailSheet({ grammar, onClose }: Props) {
               <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{grammar.usage}</div>
             </section>
           )}
+
+          {/* 我读过的句子 */}
+          <section>
+            <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <BookOpen size={11} />
+              我读过的句子
+            </div>
+            {userExamples === null ? (
+              <div className="flex items-center gap-1.5 text-gray-400 text-sm">
+                <Loader2 size={14} className="animate-spin" /> 搜索中…
+              </div>
+            ) : userExamples.length > 0 ? (
+              <div className="space-y-2">
+                {(showAllEx ? userExamples : userExamples.slice(0, 2)).map((ex, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { onClose(); navigate(`/article/${ex.articleId}`) }}
+                    className="w-full text-left bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 active:bg-amber-100 dark:active:bg-amber-950/40"
+                  >
+                    <div className="font-jp text-sm text-gray-800 dark:text-gray-200 leading-relaxed" lang="ja">
+                      {ex.furigana ? <Furigana text={ex.furigana} /> : ex.content}
+                    </div>
+                    <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                      <BookOpen size={10} />
+                      {ex.articleTitle}
+                    </div>
+                  </button>
+                ))}
+                {userExamples.length > 2 && (
+                  <button
+                    onClick={() => setShowAllEx(v => !v)}
+                    className="text-xs text-gray-400 dark:text-gray-500 underline w-full text-center pt-1"
+                  >
+                    {showAllEx ? '收起' : `更多（共 ${userExamples.length} 句）`}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-400 dark:text-gray-500 italic">
+                暂无 — 还没在文章中遇到过这个语法
+              </div>
+            )}
+          </section>
 
           {/* AI 用法解析 — on demand */}
           <section>

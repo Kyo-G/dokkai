@@ -37,6 +37,7 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
   // ── User's own sentences ──────────────────────────────────────────
   const [userExamples, setUserExamples] = useState<UserExample[]>([])
   const [userExLoading, setUserExLoading] = useState(true)
+  const [showAllEx, setShowAllEx] = useState(false)
 
   // ── AI usage notes (on-demand) ────────────────────────────────────
   const [aiDetails, setAiDetails] = useState<WordDetails | null>(
@@ -182,17 +183,14 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
               </div>
             ) : userExamples.length > 0 ? (
               <div className="space-y-2">
-                {userExamples.map((ex, i) => (
+                {(showAllEx ? userExamples : userExamples.slice(0, 2)).map((ex, i) => (
                   <button
                     key={i}
                     onClick={() => { onClose(); navigate(`/article/${ex.articleId}`) }}
                     className="w-full text-left bg-red-50 dark:bg-red-950/20 rounded-xl p-3 active:bg-red-100 dark:active:bg-red-950/40"
                   >
                     <div className="font-jp text-sm text-gray-800 dark:text-gray-200 leading-relaxed" lang="ja">
-                      {ex.furigana
-                        ? <Furigana text={ex.furigana} />
-                        : ex.content
-                      }
+                      {ex.furigana ? <Furigana text={ex.furigana} /> : ex.content}
                     </div>
                     <div className="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
                       <BookOpen size={10} />
@@ -200,6 +198,14 @@ export default function WordDetailSheet({ wordInfo, articleId, sentenceId, exist
                     </div>
                   </button>
                 ))}
+                {userExamples.length > 2 && (
+                  <button
+                    onClick={() => setShowAllEx(v => !v)}
+                    className="text-xs text-gray-400 dark:text-gray-500 underline w-full text-center pt-1"
+                  >
+                    {showAllEx ? '收起' : `更多（共 ${userExamples.length} 句）`}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="text-sm text-gray-400 dark:text-gray-500 italic">
