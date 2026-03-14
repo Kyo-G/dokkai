@@ -10,7 +10,7 @@ async function openDB(): Promise<IDBDatabase> {
   })
 }
 
-export async function getCachedBlob(text: string): Promise<Blob | null> {
+async function getCachedBlob(text: string): Promise<Blob | null> {
   try {
     const db = await openDB()
     return new Promise(resolve => {
@@ -21,7 +21,7 @@ export async function getCachedBlob(text: string): Promise<Blob | null> {
   } catch { return null }
 }
 
-export async function storeBlob(text: string, blob: Blob): Promise<void> {
+async function storeBlob(text: string, blob: Blob): Promise<void> {
   try {
     const db = await openDB()
     await new Promise<void>((resolve, reject) => {
@@ -33,7 +33,7 @@ export async function storeBlob(text: string, blob: Blob): Promise<void> {
   } catch { /* non-fatal */ }
 }
 
-export async function fetchTTS(text: string): Promise<Blob> {
+async function fetchTTS(text: string): Promise<Blob> {
   const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}`)
   if (!res.ok) throw new Error('TTS 请求失败')
   return res.blob()
@@ -47,19 +47,4 @@ export async function getAudioUrl(text: string): Promise<string> {
   const blob = await fetchTTS(text)
   await storeBlob(text, blob)
   return URL.createObjectURL(blob)
-}
-
-export async function isAudioCached(text: string): Promise<boolean> {
-  const blob = await getCachedBlob(text)
-  return blob !== null
-}
-
-export async function clearAudioCache(): Promise<void> {
-  const db = await openDB()
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite')
-    tx.objectStore(STORE).clear()
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
-  })
 }

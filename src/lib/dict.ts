@@ -95,7 +95,7 @@ export function initDict(): Promise<void> {
 }
 
 /** Synchronous lookup — call after initDict() resolves. */
-export function lookupWord(word: string, kana?: string): DictEntry | null {
+function lookupWord(word: string, kana?: string): DictEntry | null {
   if (!dictData) return null
 
   function resolve(key: string): DictEntry | null {
@@ -116,10 +116,3 @@ export async function lookupWordAsync(word: string, kana?: string): Promise<Dict
   return lookupWord(word, kana)
 }
 
-/** Clear the cached dictionary from IndexedDB (useful for updates). */
-export async function clearDictCache(): Promise<void> {
-  dictData    = null
-  initPromise = null
-  dictStatus  = 'idle'
-  await idbPut(IDB_KEY, '').catch(() => {})
-}

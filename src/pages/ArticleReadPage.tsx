@@ -61,7 +61,7 @@ export default function ArticleReadPage() {
   const lastSeenRef = useRef<string | null>(null)
   const [vocabIndex, setVocabIndex] = useState<Map<string, number>>(new Map())
   const [speakingId, setSpeakingId] = useState<string | null>(null)
-  const { speak: _speak, stop, speaking, speakSequence } = useSpeech()
+  const { stop, speaking, speakSequence } = useSpeech()
 
   useEffect(() => {
     if (id) load(id)

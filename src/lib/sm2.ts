@@ -49,14 +49,6 @@ export function addDays(date: Date, days: number): Date {
   return result
 }
 
-export function isDueToday(nextReviewDate: string): boolean {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const reviewDate = new Date(nextReviewDate)
-  reviewDate.setHours(0, 0, 0, 0)
-  return reviewDate <= today
-}
-
 export const initialSM2State: SM2State = {
   interval: 1,
   easeFactor: 2.5,

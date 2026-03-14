@@ -122,16 +122,6 @@ export async function getWords(): Promise<Word[]> {
   }))
 }
 
-export async function getWord(id: string): Promise<Word | null> {
-  const { data, error } = await supabase
-    .from('words')
-    .select(`*, articles(title)`)
-    .eq('id', id)
-    .single()
-  if (error) throw error
-  return data ? { ...data, article_title: (data as Word & { articles?: { title: string } }).articles?.title } : null
-}
-
 export async function addWord(
   word: string,
   reading: string,
