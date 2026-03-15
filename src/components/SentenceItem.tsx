@@ -310,7 +310,9 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                           <div className="flex items-center gap-2 flex-wrap">
                             <ruby className="font-jp font-bold text-gray-900 dark:text-gray-100" lang="ja">
                               {w.word}
-                              <rt className="text-[10px] font-normal text-gray-400 dark:text-gray-500">{w.reading}</rt>
+                              {/[\u4e00-\u9fff]/.test(w.word) && (
+                                <rt className="text-[10px] font-normal text-gray-400 dark:text-gray-500">{w.reading}</rt>
+                              )}
                             </ruby>
                             {w.pitch !== undefined && (
                               <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded px-1 py-0.5 leading-none">
