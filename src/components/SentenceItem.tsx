@@ -56,7 +56,7 @@ function StructureNode({ part, depth }: { part: StructurePart; depth: number }) 
   const [open, setOpen] = useState(false)
   const expandable = !!(part.children?.length && hasCoreRole(part.children))
   return (
-    <div style={{ marginLeft: depth * 12 }}>
+    <div className="inline-block" style={{ marginLeft: depth * 12 }}>
       <div
         className={`inline-flex flex-col rounded-lg px-2 py-1 mb-1 ${roleColor(part.role)} ${expandable ? 'cursor-pointer select-none' : ''}`}
         onClick={expandable ? () => setOpen(v => !v) : undefined}
@@ -67,7 +67,7 @@ function StructureNode({ part, depth }: { part: StructurePart; depth: number }) 
         <span className="font-jp text-sm font-medium leading-snug" lang="ja">{part.text}</span>
       </div>
       {expandable && open && (
-        <div className="border-l-2 border-gray-200 dark:border-[#333] ml-2 pl-2 mb-1">
+        <div className="border-l-2 border-gray-200 dark:border-[#333] ml-2 pl-2 mb-1 flex flex-wrap gap-1.5 items-start">
           {part.children!.map((child, i) => (
             <StructureNode key={i} part={child} depth={0} />
           ))}
@@ -242,7 +242,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             {analysis.structure?.length > 0 && (
               <div>
                 <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">{t.sentenceStructure}</div>
-                <div>
+                <div className="flex flex-wrap gap-1.5 items-start">
                   {analysis.structure.map((part, i) => (
                     <StructureNode key={i} part={part} depth={0} />
                   ))}
