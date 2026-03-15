@@ -260,44 +260,40 @@ export default function ArticlesPage() {
                               <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2 text-sm">
                                 {article.title}
                               </span>
-                              <div className="flex items-center gap-2 mt-2">
-                                <span className="text-[11px] text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
-                                {article.level && (
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
-                                    {article.level}
-                                  </span>
-                                )}
-                                {prog.total > 0 && (
-                                  <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 ml-auto">
-                                    {prog.readIds.length}/{prog.total}
-                                  </span>
-                                )}
-                              </div>
-                              {prog.total > 0 && (
-                                <div className="h-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden mt-1.5">
-                                  <div
-                                    className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
-                                    style={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                              )}
                               {(() => {
                                 const ap = analysisProgress.get(article.id)
-                                if (!ap || ap.analyzed === ap.total) return null
-                                const apPct = Math.round(ap.analyzed / ap.total * 100)
+                                const analyzing = ap && ap.analyzed < ap.total
+                                const apPct = ap ? Math.round(ap.analyzed / ap.total * 100) : 0
                                 return (
-                                  <div className="mt-1.5">
-                                    <div className="flex items-center justify-between mb-0.5">
-                                      <span className="text-[10px] text-blue-400 dark:text-blue-500">分析中 {ap.analyzed}/{ap.total}</span>
-                                      <span className="text-[10px] text-blue-400 dark:text-blue-500">{apPct}%</span>
+                                  <>
+                                    <div className="flex items-center gap-1.5 mt-2">
+                                      <span className="text-[11px] text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
+                                      {article.level && (
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
+                                          {article.level}
+                                        </span>
+                                      )}
+                                      <span className="ml-auto shrink-0 flex items-center gap-1.5">
+                                        {analyzing && (
+                                          <span className="text-[10px] text-blue-400 dark:text-blue-500 font-medium">{apPct}%</span>
+                                        )}
+                                        {prog.total > 0 && (
+                                          <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                            {prog.readIds.length}/{prog.total}
+                                          </span>
+                                        )}
+                                      </span>
                                     </div>
-                                    <div className="h-0.5 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-blue-400 dark:bg-blue-500 rounded-full transition-all"
-                                        style={{ width: `${apPct}%` }}
-                                      />
-                                    </div>
-                                  </div>
+                                    {(prog.total > 0 || analyzing) && (
+                                      <div className="h-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden mt-1.5">
+                                        {analyzing ? (
+                                          <div className="h-full bg-blue-400 dark:bg-blue-500 rounded-full transition-all" style={{ width: `${apPct}%` }} />
+                                        ) : (
+                                          <div className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                        )}
+                                      </div>
+                                    )}
+                                  </>
                                 )
                               })()}
                             </div>
