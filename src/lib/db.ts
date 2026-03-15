@@ -139,6 +139,23 @@ export async function saveSentenceAnalysis(
 // Words (vocabulary book)
 // ──────────────────────────────────────────────
 
+/** Returns per-article JLPT level counts for saved words, e.g. { "article-id": { N1: 3, N2: 7 } } */
+export async function getArticleWordLevels(): Promise<Map<string, Record<string, number>>> {
+  const { data } = await supabase
+    .from('words')
+    .select('article_id, jlpt')
+    .not('article_id', 'is', null)
+    .neq('jlpt', '')
+  const result = new Map<string, Record<string, number>>()
+  for (const row of data ?? []) {
+    if (!row.article_id || !row.jlpt) continue
+    if (!result.has(row.article_id)) result.set(row.article_id, {})
+    const entry = result.get(row.article_id)!
+    entry[row.jlpt] = (entry[row.jlpt] ?? 0) + 1
+  }
+  return result
+}
+
 export async function getWords(): Promise<Word[]> {
   const { data, error } = await supabase
     .from('words')

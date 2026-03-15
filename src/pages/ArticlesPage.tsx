@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Plus, ChevronRight, Trash2, Pencil, FileText, Loader2 } from 'lucide-react'
-import { getArticles, deleteArticle } from '../lib/db'
+import { getArticles, deleteArticle, getArticleWordLevels } from '../lib/db'
 import type { Article } from '../types'
 import { getProgress } from '../lib/progress'
 import { useSettings } from '../hooks/useSettings'
@@ -15,6 +15,14 @@ const LEVEL_COLORS: Record<string, string> = {
   N1: 'bg-red-100 text-red-700',
 }
 
+const JLPT_LEVELS = ['N1', 'N2', 'N3', 'N4', 'N5'] as const
+const JLPT_BAR_COLOR: Record<string, string> = {
+  N1: '#ef4444', // red-500
+  N2: '#fb923c', // orange-400
+  N3: '#facc15', // yellow-400
+  N4: '#60a5fa', // blue-400
+  N5: '#4ade80', // green-400
+}
 const LEVEL_BAR: Record<string, string> = {
   N5: 'bg-green-400',
   N4: 'bg-blue-400',
@@ -30,6 +38,7 @@ export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [wordLevels, setWordLevels] = useState<Map<string, Record<string, number>>>(new Map())
 
   useEffect(() => {
     load()
@@ -37,8 +46,9 @@ export default function ArticlesPage() {
 
   async function load() {
     try {
-      const data = await getArticles()
+      const [data, levels] = await Promise.all([getArticles(), getArticleWordLevels()])
       setArticles(data)
+      setWordLevels(levels)
     } catch (e) {
       console.error(e)
     } finally {
@@ -113,8 +123,29 @@ export default function ArticlesPage() {
                   to={`/article/${article.id}`}
                   className="flex bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
                 >
-                  {/* Level accent bar */}
-                  <div className={`w-1 shrink-0 ${LEVEL_BAR[article.level] ?? 'bg-gray-200 dark:bg-[#333]'}`} />
+                  {/* Stacked JLPT word-level bar — N1 red at top, N5 green at bottom */}
+                  {(() => {
+                    const dist = wordLevels.get(article.id)
+                    const total = dist ? Object.values(dist).reduce((a, b) => a + b, 0) : 0
+                    if (!dist || total === 0) {
+                      // Fallback: single color from manually set level
+                      return <div className={`w-1 shrink-0 ${LEVEL_BAR[article.level] ?? 'bg-gray-200 dark:bg-[#333]'}`} />
+                    }
+                    return (
+                      <div className="w-1 shrink-0 flex flex-col">
+                        {JLPT_LEVELS.map(level => {
+                          const count = dist[level] ?? 0
+                          if (count === 0) return null
+                          return (
+                            <div
+                              key={level}
+                              style={{ flex: count, backgroundColor: JLPT_BAR_COLOR[level] }}
+                            />
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
 
                   {(() => {
                     const prog = getProgress(article.id)
