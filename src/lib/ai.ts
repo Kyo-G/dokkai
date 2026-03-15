@@ -9,26 +9,24 @@ function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): s
   if (language === 'en') {
     return `Analyze this Japanese sentence for a learner. Return JSON only, no other text.
 「${sentence}」
-{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Clause/Reason/Purpose/Condition/Time/Location/Verb","children":[{"text":"sub-segment","role":"role","children":[]}]}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"noun/verb/adjective/adverb/particle/auxiliary/conjunction","meaning":"concise English meaning"}]}
+{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Clause/Reason/Purpose/Condition/Time/Location/Verb","children":[{"text":"sub-segment","role":"role","children":[]}]}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
 Structure rules:
 - Top level: main constituents (Subject, Predicate, Object)
 - Use children[] to recursively break down complex blocks into learner-friendly phrase-level units
 - Drill down until each node is easy to understand (don't stop at "subordinate clause")
 - Leaf nodes may omit children
-Grammar: noteworthy patterns only (e.g. てしまう、に対して), may be []
-Words: vocabulary worth learning — skip particles, punctuation, and very basic words like です/は/が/を/に`
+Grammar: noteworthy patterns only (e.g. てしまう、に対して), may be []`
   }
 
   return `对以下日语句子做结构解析，只返回JSON，不要其他文字。
 「${sentence}」
-{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰/从句/原因/目的/条件/时间/地点/对象/动词","children":[{"text":"子片段","role":"角色","children":[]}]}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"名词/动词/形容词/副词/助词/助动词/连词","meaning":"简洁中文释义"}]}
+{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰/从句/原因/目的/条件/时间/地点/对象/动词","children":[{"text":"子片段","role":"角色","children":[]}]}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
 structure规则：
 - 顶层给出主干成分（主语、谓语、宾语等）
 - 对复杂块用children继续拆分，直到学习者容易理解的短语层级
 - 不要只停在"从句"，要继续往下拆
 - 叶节点可省略children
-grammar：值得学的语法点（如てしまう、に対して），可为[]
-words：值得学习的词汇，跳过助词、标点和极基础词如です/は/が/を/に`
+grammar：值得学的语法点（如てしまう、に対して），可为[]`
 }
 
 // ──────────────────────────────────────────────
@@ -320,29 +318,14 @@ export async function analyzeSentence(
   settings: Settings,
   sentence: string
 ): Promise<SentenceAnalysis> {
-  const aiText = await callAI(settings, buildSentenceAnalysisPrompt(sentence, settings.language), estimateMaxTokens(sentence))
+  // AI handles structure + grammar; kuromoji handles word extraction
+  const [aiText, kuromojiWords] = await Promise.all([
+    callAI(settings, buildSentenceAnalysisPrompt(sentence, settings.language), estimateMaxTokens(sentence)),
+    tokenizeSentence(sentence, settings.language).catch(() => []),
+  ])
   const parsed = extractJSON(aiText) as SentenceAnalysis
-
-  // Enrich AI words with local dictionary data (reading, meaning, pitch, jlpt)
-  if (parsed.words?.length) {
-    const { lookupWordAsync } = await import('./dict')
-    parsed.words = await Promise.all(parsed.words.map(async w => {
-      const entry = await lookupWordAsync(w.word, w.reading)
-      if (!entry) return w
-      const meaning = settings.language === 'zh'
-        ? (entry.zh?.[0] ?? entry.en?.[0] ?? w.meaning)
-        : (entry.en?.[0] ?? w.meaning)
-      return {
-        ...w,
-        reading: entry.r ?? w.reading,
-        meaning,
-        ...(entry.p !== undefined ? { pitch: entry.p } : {}),
-        ...(entry.jlpt ? { jlpt: entry.jlpt } : {}),
-      }
-    }))
-  }
-
-  parsed.furigana = generateFurigana(sentence, parsed.words ?? [])
+  parsed.words = kuromojiWords
+  parsed.furigana = generateFurigana(sentence, kuromojiWords)
   return parsed
 }
 

@@ -46,9 +46,8 @@ const POS_MAP_ZH: Record<string, string> = {
   '感動詞': '感叹词', '接頭詞': '前缀', '接尾辞': '后缀', '記号': '符号',
 }
 
-// Simple particles that don't need to appear in the word list
-const SKIP_POS = new Set(['助詞', '記号', '補助記号'])
-const SKIP_SURFACE = new Set(['。', '、', '！', '？', '「', '」', '…', '・', '〜'])
+// Only these IPAdic POS categories are shown in the word list
+const KEEP_POS = new Set(['名詞', '動詞', '形容詞', '形容動詞', '副詞'])
 
 export async function tokenizeSentence(sentence: string, language: 'zh' | 'en'): Promise<Token[]> {
   await initTokenizer()
@@ -61,7 +60,8 @@ export async function tokenizeSentence(sentence: string, language: 'zh' | 'en'):
     const pos1 = t.pos               // e.g. 名詞
     const surface = t.surface_form   // as it appears in text
 
-    if (SKIP_POS.has(pos1) || SKIP_SURFACE.has(surface)) continue
+    // Only keep content words; skip particles, auxiliaries, conjunctions, etc.
+    if (!KEEP_POS.has(pos1)) continue
 
     // Use base form (dictionary form) for lookup
     const base = t.basic_form && t.basic_form !== '*' ? t.basic_form : surface
