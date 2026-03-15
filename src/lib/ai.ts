@@ -8,20 +8,54 @@ function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): s
   if (language === 'en') {
     return `Analyze this Japanese sentence. Return JSON only, no other text.
 「${sentence}」
-{"furigana":"sentence with {漢字|よみ} on kanji only (never annotate kana)","structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"dict form","reading":"kana","pos":"noun/verb/adj/adv/etc","meaning":"","pitch":0,"jlpt":"N3"}]}
-- furigana: kanji→{漢字|よみ}, leave kana/punctuation as-is
+{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"dict form","reading":"kana reading","pos":"noun/verb/adj/adv/etc","meaning":"","pitch":0,"jlpt":"N3"}]}
 - structure: cover full sentence
 - grammar: noteworthy points only, may be []
-- words: exclude simple particles (は が を に), pitch=Tokyo accent nucleus (0=flat)`
+- words: exclude simple particles (は が を に), pitch=Tokyo accent nucleus (0=flat), jlpt=N5-N1 or ""`
   }
 
   return `分析以下日语句子，只返回JSON，不要其他文字。
 「${sentence}」
-{"furigana":"句子加振假名，只对汉字标{漢字|よみ}，假名符号原样","structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"原形","reading":"假名","pos":"词性","meaning":"中文释义","pitch":0,"jlpt":"N3"}]}
-- furigana：只标汉字，假名/符号不动
+{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"原形","reading":"假名","pos":"词性","meaning":"中文释义","pitch":0,"jlpt":"N3"}]}
 - structure：覆盖全句
 - grammar：值得学的语法点，可为[]
-- words：排除简单助词（は が を に），pitch为东京音调核（0=平板）`
+- words：排除简单助词（は が を に），pitch为东京音调核（0=平板），jlpt填N5-N1或""`
+}
+
+// ──────────────────────────────────────────────
+// Client-side furigana generation
+// Uses the words returned by AI analysis to annotate kanji in the sentence
+// ──────────────────────────────────────────────
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export function generateFurigana(sentence: string, words: Array<{ word: string; reading: string }>): string {
+  // Only annotate words that contain kanji, longest first to avoid partial matches
+  const kanjiWords = words
+    .filter(w => /[\u4e00-\u9fff]/.test(w.word))
+    .sort((a, b) => b.word.length - a.word.length)
+
+  // Process as segments: only replace within unannotated parts
+  type Seg = { text: string; done: boolean }
+  let segs: Seg[] = [{ text: sentence, done: false }]
+
+  for (const w of kanjiWords) {
+    const re = new RegExp(escapeRegex(w.word), 'g')
+    const next: Seg[] = []
+    for (const seg of segs) {
+      if (seg.done) { next.push(seg); continue }
+      const parts = seg.text.split(re)
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i]) next.push({ text: parts[i], done: false })
+        if (i < parts.length - 1) next.push({ text: `{${w.word}|${w.reading}}`, done: true })
+      }
+    }
+    segs = next
+  }
+
+  return segs.map(s => s.text).join('')
 }
 
 function buildWordDetailsPrompt(word: string, reading: string, pos: string, language: 'zh' | 'en'): string {
@@ -274,6 +308,8 @@ export async function analyzeSentence(
   const prompt = buildSentenceAnalysisPrompt(sentence, settings.language)
   const text = await callAI(settings, prompt)
   const parsed = extractJSON(text) as SentenceAnalysis
+  // Generate furigana client-side from the returned words — no AI needed
+  parsed.furigana = generateFurigana(sentence, parsed.words ?? [])
   return parsed
 }
 
