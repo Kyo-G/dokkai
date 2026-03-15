@@ -187,7 +187,7 @@ function extractJSON(text: string): unknown {
 // Provider implementations
 // ──────────────────────────────────────────────
 
-async function callClaude(apiKey: string, prompt: string): Promise<string> {
+async function callClaude(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -198,7 +198,7 @@ async function callClaude(apiKey: string, prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1536,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -210,7 +210,7 @@ async function callClaude(apiKey: string, prompt: string): Promise<string> {
   return data.content[0].text
 }
 
-async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
+async function callOpenAI(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -220,7 +220,7 @@ async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1536,
+      max_tokens: maxTokens,
     }),
   })
   if (!response.ok) {
@@ -231,7 +231,7 @@ async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
   return data.choices[0].message.content
 }
 
-async function callDeepSeek(apiKey: string, prompt: string): Promise<string> {
+async function callDeepSeek(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
   const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -241,7 +241,7 @@ async function callDeepSeek(apiKey: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1536,
+      max_tokens: maxTokens,
     }),
   })
   if (!response.ok) {
@@ -252,14 +252,14 @@ async function callDeepSeek(apiKey: string, prompt: string): Promise<string> {
   return data.choices[0].message.content
 }
 
-async function callGemini(apiKey: string, prompt: string): Promise<string> {
+async function callGemini(apiKey: string, prompt: string, maxTokens: number): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 1536 },
+      generationConfig: { maxOutputTokens: maxTokens },
     }),
   })
   if (!response.ok) {
@@ -276,22 +276,28 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
 // Unified AI caller
 // ──────────────────────────────────────────────
 
-async function callAI(settings: Settings, prompt: string): Promise<string> {
+// Each Japanese character in the sentence roughly produces ~15 output tokens
+// (structure segment + word entry + grammar entry). Clamp between 512 and 2048.
+function estimateMaxTokens(sentence: string): number {
+  return Math.min(2048, Math.max(512, 400 + sentence.length * 15))
+}
+
+async function callAI(settings: Settings, prompt: string, maxTokens = 1536): Promise<string> {
   const { provider, claudeKey, openaiKey, geminiKey, deepseekKey, language } = settings
   const isEn = language === 'en'
   switch (provider) {
     case 'claude':
       if (!claudeKey) throw new Error(isEn ? 'Please enter your Claude API Key in Settings.' : '请先在设置页面填入 Claude API Key')
-      return callClaude(claudeKey, prompt)
+      return callClaude(claudeKey, prompt, maxTokens)
     case 'openai':
       if (!openaiKey) throw new Error(isEn ? 'Please enter your OpenAI API Key in Settings.' : '请先在设置页面填入 OpenAI API Key')
-      return callOpenAI(openaiKey, prompt)
+      return callOpenAI(openaiKey, prompt, maxTokens)
     case 'gemini':
       if (!geminiKey) throw new Error(isEn ? 'Please enter your Gemini API Key in Settings.' : '请先在设置页面填入 Gemini API Key')
-      return callGemini(geminiKey, prompt)
+      return callGemini(geminiKey, prompt, maxTokens)
     case 'deepseek':
       if (!deepseekKey) throw new Error(isEn ? 'Please enter your DeepSeek API Key in Settings.' : '请先在设置页面填入 DeepSeek API Key')
-      return callDeepSeek(deepseekKey, prompt)
+      return callDeepSeek(deepseekKey, prompt, maxTokens)
     default:
       throw new Error(isEn ? 'Unknown AI provider.' : '未知的 AI Provider')
   }
@@ -306,7 +312,7 @@ export async function analyzeSentence(
   sentence: string
 ): Promise<SentenceAnalysis> {
   const prompt = buildSentenceAnalysisPrompt(sentence, settings.language)
-  const text = await callAI(settings, prompt)
+  const text = await callAI(settings, prompt, estimateMaxTokens(sentence))
   const parsed = extractJSON(text) as SentenceAnalysis
   // Generate furigana client-side from the returned words — no AI needed
   parsed.furigana = generateFurigana(sentence, parsed.words ?? [])
