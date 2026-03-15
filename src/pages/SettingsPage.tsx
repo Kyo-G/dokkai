@@ -159,6 +159,20 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {/* Unsplash API Key */}
+      <div className="space-y-2">
+        <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t.unsplashKeyLabel}</div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t.unsplashKeyHint}</p>
+        <input
+          type="password"
+          value={settings.unsplashKey}
+          onChange={e => updateSettings({ unsplashKey: e.target.value })}
+          placeholder="your-unsplash-access-key"
+          className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1e1e1e] text-gray-900 dark:text-gray-100 text-sm
+            focus:outline-none focus:border-red-400"
+        />
+      </div>
+
       {/* JLPT level filter */}
       <div className="space-y-2">
         <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t.myJlptLevel}</div>

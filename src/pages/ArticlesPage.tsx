@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Plus, ChevronRight, Trash2, Pencil, FileText, Loader2 } from 'lucide-react'
 import { getArticles, deleteArticle, getArticleWordLevels } from '../lib/db'
+import { getCachedImage, setCachedImage, fetchArticleImage } from '../lib/unsplash'
 import type { Article } from '../types'
 import { getProgress } from '../lib/progress'
 import { useSettings } from '../hooks/useSettings'
@@ -39,6 +40,10 @@ export default function ArticlesPage() {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [wordLevels, setWordLevels] = useState<Map<string, Record<string, number>>>(new Map())
+  const [images, setImages] = useState<Record<string, string>>(() => {
+    // Pre-populate from localStorage cache
+    return {}
+  })
 
   useEffect(() => {
     load()
@@ -49,6 +54,26 @@ export default function ArticlesPage() {
       const [data, levels] = await Promise.all([getArticles(), getArticleWordLevels()])
       setArticles(data)
       setWordLevels(levels)
+
+      // Load cached images first
+      const cached: Record<string, string> = {}
+      for (const a of data) {
+        const url = getCachedImage(a.id)
+        if (url) cached[a.id] = url
+      }
+      setImages(cached)
+
+      // Fetch missing images if Unsplash key is set
+      if (settings.unsplashKey) {
+        for (const a of data) {
+          if (cached[a.id]) continue
+          fetchArticleImage(a.title, settings.unsplashKey).then(url => {
+            if (!url) return
+            setCachedImage(a.id, url)
+            setImages(prev => ({ ...prev, [a.id]: url }))
+          })
+        }
+      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -123,6 +148,15 @@ export default function ArticlesPage() {
                   to={`/article/${article.id}`}
                   className="flex flex-col bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
                 >
+
+                  {/* Cover image */}
+                  {images[article.id] && (
+                    <img
+                      src={images[article.id]}
+                      alt=""
+                      className="w-full h-36 object-cover"
+                    />
+                  )}
 
                   {(() => {
                     const prog = getProgress(article.id)

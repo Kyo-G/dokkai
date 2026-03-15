@@ -10,6 +10,7 @@ export interface Settings {
   deepseekKey: string
   userLevel: ArticleLevel  // 用户自身 JLPT 水平，低于此级别的单词自动隐藏
   language: 'zh' | 'en'
+  unsplashKey: string
 }
 
 export interface Article {

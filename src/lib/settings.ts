@@ -10,6 +10,7 @@ export const defaultSettings: Settings = {
   deepseekKey: '',
   userLevel: '',
   language: 'zh',
+  unsplashKey: '',
 }
 
 export function loadSettings(): Settings {
