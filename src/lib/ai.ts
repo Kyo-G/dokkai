@@ -198,7 +198,7 @@ async function callClaude(apiKey: string, prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
+      max_tokens: 1536,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -220,7 +220,7 @@ async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1024,
+      max_tokens: 1536,
     }),
   })
   if (!response.ok) {
@@ -241,7 +241,7 @@ async function callDeepSeek(apiKey: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1024,
+      max_tokens: 1536,
     }),
   })
   if (!response.ok) {
@@ -259,7 +259,7 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 1024 },
+      generationConfig: { maxOutputTokens: 1536 },
     }),
   })
   if (!response.ok) {
