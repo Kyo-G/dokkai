@@ -158,7 +158,7 @@ export default function ArticlesPage() {
                           <img
                             src={images[article.id]}
                             alt=""
-                            className="w-20 h-20 object-cover shrink-0"
+                            className="w-20 object-cover shrink-0 self-stretch"
                           />
                         )}
 
