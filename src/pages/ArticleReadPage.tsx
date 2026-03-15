@@ -266,7 +266,7 @@ export default function ArticleReadPage() {
             </button>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="font-bold text-gray-900 dark:text-gray-100 truncate">{article.title}</h1>
+                <h1 className="font-bold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">{article.title}</h1>
                 {article.level && (
                   <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
                     {article.level}
