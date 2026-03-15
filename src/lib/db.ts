@@ -139,19 +139,24 @@ export async function saveSentenceAnalysis(
 // Words (vocabulary book)
 // ──────────────────────────────────────────────
 
-/** Returns per-article JLPT level counts for saved words, e.g. { "article-id": { N1: 3, N2: 7 } } */
+/** Returns per-article JLPT level counts aggregated from all analyzed sentence caches. */
 export async function getArticleWordLevels(): Promise<Map<string, Record<string, number>>> {
   const { data } = await supabase
-    .from('words')
-    .select('article_id, jlpt')
-    .not('article_id', 'is', null)
-    .neq('jlpt', '')
+    .from('sentences')
+    .select('article_id, analysis_cache')
+    .eq('is_analyzed', true)
+    .not('analysis_cache', 'is', null)
   const result = new Map<string, Record<string, number>>()
   for (const row of data ?? []) {
-    if (!row.article_id || !row.jlpt) continue
+    if (!row.article_id || !row.analysis_cache) continue
+    const cache = row.analysis_cache as SentenceAnalysis
+    if (!Array.isArray(cache.words)) continue
     if (!result.has(row.article_id)) result.set(row.article_id, {})
     const entry = result.get(row.article_id)!
-    entry[row.jlpt] = (entry[row.jlpt] ?? 0) + 1
+    for (const word of cache.words) {
+      if (!word.jlpt) continue
+      entry[word.jlpt] = (entry[word.jlpt] ?? 0) + 1
+    }
   }
   return result
 }

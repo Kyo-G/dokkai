@@ -153,19 +153,12 @@ export default function ArticlesPage() {
                     return (
                       <div className="flex-1 min-w-0 px-4 py-3.5 flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          {/* Title + level badge */}
-                          <div className="flex items-start gap-2 flex-wrap">
-                            <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug">
-                              {article.title}
-                            </span>
-                            {article.level && (
-                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 mt-0.5 ${LEVEL_COLORS[article.level] || ''}`}>
-                                {article.level}
-                              </span>
-                            )}
-                          </div>
+                          {/* Title */}
+                          <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
+                            {article.title}
+                          </span>
 
-                          {/* Date + progress */}
+                          {/* Date + progress + level badge */}
                           <div className="flex items-center gap-2 mt-2.5">
                             <span className="text-xs text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
                             {prog.total > 0 && (
@@ -180,6 +173,11 @@ export default function ArticlesPage() {
                                   {t.sentenceCount(prog.readIds.length)}/{t.sentenceCount(prog.total)}
                                 </span>
                               </>
+                            )}
+                            {article.level && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ml-auto ${LEVEL_COLORS[article.level] || ''}`}>
+                                {article.level}
+                              </span>
                             )}
                           </div>
                         </div>
