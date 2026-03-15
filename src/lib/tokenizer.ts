@@ -56,7 +56,8 @@ export async function tokenizeSentence(sentence: string, language: 'zh' | 'en'):
   const tokens: Token[] = []
   const seen = new Set<string>()
 
-  for (const t of raw) {
+  for (let i = 0; i < raw.length; i++) {
+    const t = raw[i]
     const pos1 = t.pos               // e.g. 名詞
     const surface = t.surface_form   // as it appears in text
 
@@ -64,7 +65,17 @@ export async function tokenizeSentence(sentence: string, language: 'zh' | 'en'):
     if (!KEEP_POS.has(pos1)) continue
 
     // Use base form (dictionary form) for lookup
-    const base = t.basic_form && t.basic_form !== '*' ? t.basic_form : surface
+    let base = t.basic_form && t.basic_form !== '*' ? t.basic_form : surface
+
+    // Combine サ変 nouns with a following する verb → e.g. 撮影する, 勉強する
+    // Handles all forms: する・した・します・される・させる etc.
+    if (pos1 === '名詞' && t.pos_detail_1 === 'サ変接続') {
+      const next = raw[i + 1]
+      if (next && next.pos === '動詞' && next.basic_form === 'する') {
+        base = base + 'する'
+        i++ // consume the する token
+      }
+    }
     if (seen.has(base)) continue
     seen.add(base)
 
