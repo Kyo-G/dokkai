@@ -9,15 +9,17 @@ function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): s
   if (language === 'en') {
     return `Analyze this Japanese sentence. Return JSON only, no other text.
 「${sentence}」
-{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
+{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction","modifies":"word being modified (only for Modifier role)"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
 - structure: cover full sentence
+- modifies: only include on Modifier parts; value is the word/phrase being modified (e.g. "noun" or "verb")
 - grammar: noteworthy grammar patterns only (e.g. てしまう、に対して), may be []`
   }
 
   return `分析以下日语句子，只返回JSON，不要其他文字。
 「${sentence}」
-{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
+{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词","modifies":"被修饰的词（仅修饰成分需要填）"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
 - structure：覆盖全句
+- modifies：仅在role为修饰成分时填写，值为被修饰的核心词（如「こと」「人」「時間」等）
 - grammar：值得学的语法点（如てしまう、に対して），可为[]`
 }
 

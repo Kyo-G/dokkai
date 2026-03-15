@@ -40,7 +40,8 @@ export interface SentenceAnalysis {
 
 export interface StructurePart {
   text: string
-  role: string // 主语 / 谓语 / 宾语 / 修饰成分 etc.
+  role: string    // 主语 / 谓语 / 宾语 / 修饰成分 etc.
+  modifies?: string  // 该修饰成分所修饰的词/短语
 }
 
 export interface GrammarPoint {

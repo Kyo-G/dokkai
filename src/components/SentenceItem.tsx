@@ -211,7 +211,9 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
                   {analysis.structure.map((part, i) => (
                     <span key={i} className={`inline-flex flex-col items-center rounded-lg px-2 py-1 ${roleColor(part.role)}`}>
                       <span className="font-jp text-sm font-medium" lang="ja">{part.text}</span>
-                      <span className="text-[10px] opacity-70 mt-0.5">{part.role}</span>
+                      <span className="text-[10px] opacity-70 mt-0.5">
+                        {part.role}{part.modifies ? <span lang="ja">→{part.modifies}</span> : ''}
+                      </span>
                     </span>
                   ))}
                 </div>
