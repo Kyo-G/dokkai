@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Plus, ChevronRight, Trash2, Pencil, FileText, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Pencil, FileText, Loader2 } from 'lucide-react'
 import { getArticles, deleteArticle, getArticleWordLevels } from '../lib/db'
 import { getCachedImage, setCachedImage, fetchArticleImage } from '../lib/unsplash'
 import type { Article } from '../types'
@@ -18,11 +18,11 @@ const LEVEL_COLORS: Record<string, string> = {
 
 const JLPT_LEVELS = ['N1', 'N2', 'N3', 'N4', 'N5'] as const
 const JLPT_BAR_COLOR: Record<string, string> = {
-  N1: '#ef4444', // red-500
-  N2: '#fb923c', // orange-400
-  N3: '#facc15', // yellow-400
-  N4: '#60a5fa', // blue-400
-  N5: '#4ade80', // green-400
+  N1: '#ef4444',
+  N2: '#fb923c',
+  N3: '#facc15',
+  N4: '#60a5fa',
+  N5: '#4ade80',
 }
 const LEVEL_BAR: Record<string, string> = {
   N5: 'bg-green-400',
@@ -32,6 +32,9 @@ const LEVEL_BAR: Record<string, string> = {
   N1: 'bg-red-500',
 }
 
+// Width in px of the revealed action panel (edit + delete)
+const ACTION_WIDTH = 128
+
 export default function ArticlesPage() {
   const navigate = useNavigate()
   const { settings } = useSettings()
@@ -40,10 +43,9 @@ export default function ArticlesPage() {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [wordLevels, setWordLevels] = useState<Map<string, Record<string, number>>>(new Map())
-  const [images, setImages] = useState<Record<string, string>>(() => {
-    // Pre-populate from localStorage cache
-    return {}
-  })
+  const [images, setImages] = useState<Record<string, string>>({})
+  const [openCardId, setOpenCardId] = useState<string | null>(null)
+  const swipeTouchRef = useRef<{ x: number; y: number; id: string } | null>(null)
 
   useEffect(() => {
     load()
@@ -55,7 +57,6 @@ export default function ArticlesPage() {
       setArticles(data)
       setWordLevels(levels)
 
-      // Load cached images first
       const cached: Record<string, string> = {}
       for (const a of data) {
         const url = getCachedImage(a.id)
@@ -63,7 +64,6 @@ export default function ArticlesPage() {
       }
       setImages(cached)
 
-      // Fetch missing images if Unsplash key is set
       if (settings.unsplashKey) {
         for (const a of data) {
           if (cached[a.id]) continue
@@ -95,6 +95,26 @@ export default function ArticlesPage() {
   function formatDate(str: string) {
     const locale = settings.language === 'en' ? 'en-US' : 'zh-CN'
     return new Date(str).toLocaleDateString(locale, { month: 'short', day: 'numeric' })
+  }
+
+  function handleCardTouchStart(e: React.TouchEvent, id: string) {
+    swipeTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, id }
+  }
+
+  function handleCardTouchEnd(e: React.TouchEvent) {
+    const t = swipeTouchRef.current
+    if (!t) return
+    const dx = e.changedTouches[0].clientX - t.x
+    const dy = e.changedTouches[0].clientY - t.y
+    // Only trigger on clearly horizontal swipes
+    if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 40) {
+      if (dx < 0) setOpenCardId(t.id)
+      else setOpenCardId(null)
+    } else if (Math.abs(dx) < 10 && openCardId === t.id) {
+      // Tap on open card → close
+      setOpenCardId(null)
+    }
+    swipeTouchRef.current = null
   }
 
   return (
@@ -144,100 +164,114 @@ export default function ArticlesPage() {
                   </div>
                 </div>
               ) : (
-                <Link
-                  to={`/article/${article.id}`}
-                  className="flex flex-col bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
+                <div
+                  className="relative overflow-hidden rounded-2xl"
+                  onTouchStart={e => handleCardTouchStart(e, article.id)}
+                  onTouchEnd={handleCardTouchEnd}
                 >
-                  {(() => {
-                    const prog = getProgress(article.id)
-                    const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
-                    return (
-                      <div className="flex items-stretch gap-0">
-                        {/* Thumbnail */}
-                        {images[article.id] && (
-                          <img
-                            src={images[article.id]}
-                            alt=""
-                            className="w-20 object-cover shrink-0 self-stretch"
-                          />
-                        )}
+                  {/* Action buttons revealed on left swipe */}
+                  <div
+                    className="absolute inset-y-0 right-0 flex"
+                    style={{ width: ACTION_WIDTH }}
+                  >
+                    <button
+                      className="flex-1 bg-blue-500 flex flex-col items-center justify-center gap-1 text-white"
+                      onClick={() => { setOpenCardId(null); navigate(`/import?edit=${article.id}`) }}
+                    >
+                      <Pencil size={18} />
+                      <span className="text-[10px] font-medium">{t.save === '保存' ? '编辑' : 'Edit'}</span>
+                    </button>
+                    <button
+                      className="flex-1 bg-red-500 flex flex-col items-center justify-center gap-1 text-white rounded-r-2xl"
+                      onClick={() => { setOpenCardId(null); setDeleteId(article.id) }}
+                    >
+                      <Trash2 size={18} />
+                      <span className="text-[10px] font-medium">{t.delete}</span>
+                    </button>
+                  </div>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0 px-3 py-3 flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            {/* Title */}
-                            <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2 text-sm">
-                              {article.title}
-                            </span>
+                  {/* Sliding card content */}
+                  <div
+                    style={{
+                      transform: `translateX(${openCardId === article.id ? -ACTION_WIDTH : 0}px)`,
+                      transition: 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)',
+                    }}
+                  >
+                    <Link
+                      to={`/article/${article.id}`}
+                      className="flex flex-col bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
+                      onClick={e => { if (openCardId === article.id) { e.preventDefault(); setOpenCardId(null) } }}
+                    >
+                      {(() => {
+                        const prog = getProgress(article.id)
+                        const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
+                        return (
+                          <div className="flex items-stretch">
+                            {/* Thumbnail */}
+                            {images[article.id] && (
+                              <img
+                                src={images[article.id]}
+                                alt=""
+                                className="w-20 object-cover shrink-0 self-stretch"
+                              />
+                            )}
 
-                            {/* Date + progress + level badge */}
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-[11px] text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
-                              {article.level && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
-                                  {article.level}
-                                </span>
-                              )}
+                            {/* Content */}
+                            <div className="flex-1 min-w-0 px-3 py-3">
+                              <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2 text-sm">
+                                {article.title}
+                              </span>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-[11px] text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
+                                {article.level && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
+                                    {article.level}
+                                  </span>
+                                )}
+                                {prog.total > 0 && (
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 ml-auto">
+                                    {prog.readIds.length}/{prog.total}
+                                  </span>
+                                )}
+                              </div>
                               {prog.total > 0 && (
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 ml-auto">
-                                  {prog.readIds.length}/{prog.total}
-                                </span>
+                                <div className="h-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden mt-1.5">
+                                  <div
+                                    className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
                               )}
                             </div>
-                            {prog.total > 0 && (
-                              <div className="h-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden mt-1.5">
+                          </div>
+                        )
+                      })()}
+
+                      {/* Bottom JLPT bar */}
+                      {(() => {
+                        const dist = wordLevels.get(article.id)
+                        const total = dist ? Object.values(dist).reduce((a, b) => a + b, 0) : 0
+                        if (!dist || total === 0) {
+                          return <div className={`h-1 shrink-0 ${LEVEL_BAR[article.level] ?? 'bg-gray-100 dark:bg-[#2a2a2a]'}`} />
+                        }
+                        return (
+                          <div className="h-1 shrink-0 flex">
+                            {JLPT_LEVELS.map(level => {
+                              const count = dist[level] ?? 0
+                              if (count === 0) return null
+                              return (
                                 <div
-                                  className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
-                                  style={{ width: `${pct}%` }}
+                                  key={level}
+                                  style={{ flex: count, backgroundColor: JLPT_BAR_COLOR[level] }}
                                 />
-                              </div>
-                            )}
+                              )
+                            })}
                           </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-0.5 shrink-0 -mr-1 -mt-1">
-                            <button
-                              onClick={e => { e.preventDefault(); navigate(`/import?edit=${article.id}`) }}
-                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-400"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                            <button
-                              onClick={e => { e.preventDefault(); setDeleteId(article.id) }}
-                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                            <ChevronRight size={16} className="text-gray-200 dark:text-gray-700" />
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })()}
-
-                  {/* Bottom JLPT bar */}
-                  {(() => {
-                    const dist = wordLevels.get(article.id)
-                    const total = dist ? Object.values(dist).reduce((a, b) => a + b, 0) : 0
-                    if (!dist || total === 0) {
-                      return <div className={`h-1 shrink-0 ${LEVEL_BAR[article.level] ?? 'bg-gray-100 dark:bg-[#2a2a2a]'}`} />
-                    }
-                    return (
-                      <div className="h-1 shrink-0 flex">
-                        {JLPT_LEVELS.map(level => {
-                          const count = dist[level] ?? 0
-                          if (count === 0) return null
-                          return (
-                            <div
-                              key={level}
-                              style={{ flex: count, backgroundColor: JLPT_BAR_COLOR[level] }}
-                            />
-                          )
-                        })}
-                      </div>
-                    )
-                  })()}
-                </Link>
+                        )
+                      })()}
+                    </Link>
+                  </div>
+                </div>
               )}
             </div>
           ))}
