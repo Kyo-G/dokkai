@@ -207,13 +207,15 @@ export default function ArticlesPage() {
                         const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
                         return (
                           <div className="flex items-stretch">
-                            {/* Thumbnail */}
+                            {/* Thumbnail — 16:9 */}
                             {images[article.id] && (
-                              <img
-                                src={images[article.id]}
-                                alt=""
-                                className="w-20 object-cover shrink-0 self-stretch"
-                              />
+                              <div className="shrink-0 self-start overflow-hidden" style={{ width: 128, aspectRatio: '16/9' }}>
+                                <img
+                                  src={images[article.id]}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
                             )}
 
                             {/* Content */}
