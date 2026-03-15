@@ -260,83 +260,76 @@ export default function ArticleReadPage() {
 
   return (
     <div className="max-w-lg mx-auto">
-      {/* ── Header ──────────────────────────────────────────── */}
+
+      {/* ── Top bar (sticky, minimal) ────────────────────────── */}
       <div className="sticky top-0 z-10">
-        <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-100 dark:border-[#2a2a2a] px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="text-gray-400 dark:text-gray-500 shrink-0">
-              <ArrowLeft size={22} />
-            </button>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">{article.title}</h1>
-                {article.level && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
-                    {article.level}
-                  </span>
-                )}
-              </div>
-            </div>
+        <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-100 dark:border-[#2a2a2a] px-4 py-2.5 flex items-center gap-2">
 
-            {/* Pre-analysis progress ring */}
-            {preProgress && (() => {
-              const { done, total } = preProgress
-              const offset = prCirc * (1 - done / total)
-              return (
-                <div className="relative shrink-0">
-                  {/* Outer glow pulse to signal activity */}
-                  <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-ping" />
-                  <svg width={PR.sz} height={PR.sz} viewBox={`0 0 ${PR.sz} ${PR.sz}`} className="-rotate-90">
-                    {/* Track */}
-                    <circle cx={PR.cx} cy={PR.cy} r={PR.r} fill="none" strokeWidth="3"
-                      className="stroke-gray-200 dark:stroke-gray-700" />
-                    {/* Progress arc */}
-                    <circle cx={PR.cx} cy={PR.cy} r={PR.r} fill="none" strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray={prCirc}
-                      strokeDashoffset={offset}
-                      className="stroke-blue-500 dark:stroke-blue-400 transition-[stroke-dashoffset] duration-500" />
-                    {/* Spinning activity arc — shows something is happening between advances */}
-                    <circle cx={PR.cx} cy={PR.cy} r={PR.r} fill="none" strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray={`8 ${(prCirc - 8).toFixed(1)}`}
-                      className="stroke-blue-300/60 dark:stroke-blue-500/60">
-                      <animateTransform
-                        attributeName="transform"
-                        type="rotate"
-                        from={`0 ${PR.cx} ${PR.cy}`}
-                        to={`360 ${PR.cx} ${PR.cy}`}
-                        dur="1.2s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[9px] font-bold text-blue-500 dark:text-blue-400 select-none leading-none">
-                      {total - done}
-                    </span>
-                  </div>
-                </div>
-              )
-            })()}
+          {/* Back */}
+          <button onClick={() => navigate(-1)} className="text-gray-400 dark:text-gray-500 shrink-0 p-0.5">
+            <ArrowLeft size={22} />
+          </button>
 
-            {/* Play/stop — read mode only */}
-            {mode === 'read' && (
-              <button
-                onClick={() => {
-                  if (speaking) { stop(); setSpeakingId(null) }
-                  else startReading(0)
-                }}
-                className={`shrink-0 p-1.5 rounded-lg transition-colors ${
-                  speaking
-                    ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30'
-                    : 'text-gray-400 dark:text-gray-500 active:text-gray-700'
-                }`}
-              >
-                {speaking ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-              </button>
-            )}
+          <div className="flex-1" />
+
+          {/* Furigana toggle */}
+          <button
+            onClick={() => setShowFurigana(v => !v)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors shrink-0 ${
+              showFurigana
+                ? 'bg-red-700 text-white border-red-700'
+                : 'border-gray-200 dark:border-[#444] text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            {showFurigana ? t.hideFurigana : t.showFurigana}
+          </button>
+
+          {/* Mode indicator dots */}
+          <div className="flex items-center gap-1 shrink-0">
+            <span className={`text-[10px] transition-colors ${mode === 'read' ? 'text-gray-600 dark:text-gray-300 font-medium' : 'text-gray-300 dark:text-gray-600'}`}>{t.readMode}</span>
+            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${mode === 'read' ? 'bg-gray-600 dark:bg-gray-300 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
+            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${mode === 'study' ? 'bg-gray-600 dark:bg-gray-300 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
+            <span className={`text-[10px] transition-colors ${mode === 'study' ? 'text-gray-600 dark:text-gray-300 font-medium' : 'text-gray-300 dark:text-gray-600'}`}>{t.studyMode}</span>
           </div>
+
+          {/* Pre-analysis progress ring */}
+          {preProgress && (() => {
+            const { done, total } = preProgress
+            const offset = prCirc * (1 - done / total)
+            return (
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-full bg-blue-400/20 animate-ping" />
+                <svg width={PR.sz} height={PR.sz} viewBox={`0 0 ${PR.sz} ${PR.sz}`} className="-rotate-90">
+                  <circle cx={PR.cx} cy={PR.cy} r={PR.r} fill="none" strokeWidth="3" className="stroke-gray-200 dark:stroke-gray-700" />
+                  <circle cx={PR.cx} cy={PR.cy} r={PR.r} fill="none" strokeWidth="3" strokeLinecap="round"
+                    strokeDasharray={prCirc} strokeDashoffset={offset}
+                    className="stroke-blue-500 dark:stroke-blue-400 transition-[stroke-dashoffset] duration-500" />
+                  <circle cx={PR.cx} cy={PR.cy} r={PR.r} fill="none" strokeWidth="3" strokeLinecap="round"
+                    strokeDasharray={`8 ${(prCirc - 8).toFixed(1)}`}
+                    className="stroke-blue-300/60 dark:stroke-blue-500/60">
+                    <animateTransform attributeName="transform" type="rotate"
+                      from={`0 ${PR.cx} ${PR.cy}`} to={`360 ${PR.cx} ${PR.cy}`}
+                      dur="1.2s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[9px] font-bold text-blue-500 dark:text-blue-400 select-none leading-none">{total - done}</span>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Play/stop — read mode only */}
+          {mode === 'read' && (
+            <button
+              onClick={() => { if (speaking) { stop(); setSpeakingId(null) } else startReading(0) }}
+              className={`shrink-0 p-1.5 rounded-lg transition-colors ${
+                speaking ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30' : 'text-gray-400 dark:text-gray-500'
+              }`}
+            >
+              {speaking ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+            </button>
+          )}
         </div>
 
         {/* Expanded sentence banner — study mode only */}
@@ -349,28 +342,31 @@ export default function ArticleReadPage() {
         )}
       </div>
 
-      {/* ── Cover image ─────────────────────────────────────── */}
-      {coverImage && (
-        <img src={coverImage} alt="" className="w-full h-48 object-cover" />
-      )}
+      {/* ── Swipe-aware content ──────────────────────────────── */}
+      <div className="relative" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        {swipeBlocking && <div className="absolute inset-0 z-50" />}
 
-      {/* ── Main content (swipe-aware) ───────────────────────── */}
-      <div
-        className="relative"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Transparent overlay that eats the tap event right after a swipe,
-            preventing accidental word-saves when fingers lift */}
-        {swipeBlocking && (
-          <div className="absolute inset-0 z-50" />
+        {/* Cover image */}
+        {coverImage && (
+          <img src={coverImage} alt="" className="w-full h-56 object-cover" />
         )}
 
+        {/* Title + level */}
+        <div className={`px-5 pb-4 border-b border-gray-100 dark:border-[#2a2a2a] ${coverImage ? 'pt-5' : 'pt-8'}`}>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-snug">{article.title}</h1>
+          {article.level && (
+            <span className={`inline-block mt-2 text-xs px-1.5 py-0.5 rounded font-medium ${LEVEL_COLORS[article.level] || ''}`}>
+              {article.level}
+            </span>
+          )}
+        </div>
+
+        {/* Article content */}
         {sentences.length === 0 ? (
           <p className="text-gray-400 dark:text-gray-500 text-sm text-center py-16">{t.noSentences}</p>
         ) : mode === 'read' ? (
           /* ── 通読モード ── */
-          <div className="px-5 py-8 pb-28">
+          <div className="px-5 py-8 pb-16">
             <div className="font-jp text-[17px] leading-[2.2]" lang="ja">
               {groupByParagraph(article.content, sentences).map((group, gi) => (
                 <p key={gi} className="mb-[1em]">
@@ -385,8 +381,7 @@ export default function ArticleReadPage() {
                     >
                       {showFurigana && s.analysis_cache?.furigana
                         ? <Furigana text={s.analysis_cache.furigana} />
-                        : s.content
-                      }
+                        : s.content}
                     </button>
                   ))}
                 </p>
@@ -395,13 +390,9 @@ export default function ArticleReadPage() {
           </div>
         ) : (
           /* ── 精読モード ── */
-          <div className="px-4 py-4 space-y-3 pb-28">
+          <div className="px-4 py-4 space-y-3 pb-16">
             {sentences.map(sentence => (
-              <div
-                key={sentence.id}
-                ref={el => { sentenceRefs.current[sentence.id] = el }}
-                className="rounded-2xl"
-              >
+              <div key={sentence.id} ref={el => { sentenceRefs.current[sentence.id] = el }} className="rounded-2xl">
                 <SentenceItem
                   sentence={sentence}
                   articleId={article.id}
@@ -419,49 +410,6 @@ export default function ArticleReadPage() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* ── Bottom bar ──────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 flex justify-center pointer-events-none">
-        <div className="w-full max-w-lg pointer-events-auto
-          bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm
-          border-t border-gray-100 dark:border-[#2a2a2a]
-          px-5 py-2.5 flex items-center justify-between">
-
-          {/* Furigana toggle */}
-          <button
-            onClick={() => setShowFurigana(v => !v)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-              showFurigana
-                ? 'bg-red-700 text-white border-red-700'
-                : 'border-gray-200 dark:border-[#444] text-gray-500 dark:text-gray-400'
-            }`}
-          >
-            {showFurigana ? t.hideFurigana : t.showFurigana}
-          </button>
-
-          {/* Mode indicator — two dots showing current mode, swipe to switch */}
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="flex items-center gap-2">
-              <span className={`text-[10px] transition-colors ${mode === 'read' ? 'text-gray-700 dark:text-gray-200 font-medium' : 'text-gray-300 dark:text-gray-600'}`}>
-                {t.readMode}
-              </span>
-              <div className="flex items-center gap-1">
-                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${mode === 'read' ? 'bg-gray-700 dark:bg-gray-200 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
-                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${mode === 'study' ? 'bg-gray-700 dark:bg-gray-200 scale-125' : 'bg-gray-300 dark:bg-gray-600'}`} />
-              </div>
-              <span className={`text-[10px] transition-colors ${mode === 'study' ? 'text-gray-700 dark:text-gray-200 font-medium' : 'text-gray-300 dark:text-gray-600'}`}>
-                {t.studyMode}
-              </span>
-            </div>
-            <span className="text-[9px] text-gray-300 dark:text-gray-600">
-              {mode === 'read' ? '← ' : ''}{settings.language === 'en' ? 'swipe' : '划动切换'}{mode === 'study' ? ' →' : ''}
-            </span>
-          </div>
-
-          {/* Right spacer matching furigana button width */}
-          <div className="w-[72px]" />
-        </div>
       </div>
     </div>
   )
