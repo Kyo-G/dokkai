@@ -7,20 +7,28 @@ import { tokenizeSentence } from './tokenizer'
 
 function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): string {
   if (language === 'en') {
-    return `Analyze this Japanese sentence. Return JSON only, no other text.
+    return `Analyze this Japanese sentence for a learner. Return JSON only, no other text.
 「${sentence}」
-{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"noun/verb/adjective/adverb/particle/auxiliary/conjunction/prefix/suffix","meaning":"concise English meaning"}]}
-- structure: cover full sentence
-- grammar: noteworthy grammar patterns only (e.g. てしまう、に対して), may be []
-- words: vocabulary worth learning (skip particles, punctuation, and very basic words like です/は/が/を/に)`
+{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Clause/Reason/Purpose/Condition/Time/Location/Verb","children":[{"text":"sub-segment","role":"role","children":[]}]}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"noun/verb/adjective/adverb/particle/auxiliary/conjunction","meaning":"concise English meaning"}]}
+Structure rules:
+- Top level: main constituents (Subject, Predicate, Object)
+- Use children[] to recursively break down complex blocks into learner-friendly phrase-level units
+- Drill down until each node is easy to understand (don't stop at "subordinate clause")
+- Leaf nodes may omit children
+Grammar: noteworthy patterns only (e.g. てしまう、に対して), may be []
+Words: vocabulary worth learning — skip particles, punctuation, and very basic words like です/は/が/を/に`
   }
 
-  return `分析以下日语句子，只返回JSON，不要其他文字。
+  return `对以下日语句子做结构解析，只返回JSON，不要其他文字。
 「${sentence}」
-{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"名词/动词/形容词/副词/助词/助动词/连词/前缀/后缀","meaning":"简洁中文释义"}]}
-- structure：覆盖全句
-- grammar：值得学的语法点（如てしまう、に対して），可为[]
-- words：值得学习的词汇（跳过助词、标点和极基础词如です/は/が/を/に）`
+{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰/从句/原因/目的/条件/时间/地点/对象/动词","children":[{"text":"子片段","role":"角色","children":[]}]}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"名词/动词/形容词/副词/助词/助动词/连词","meaning":"简洁中文释义"}]}
+structure规则：
+- 顶层给出主干成分（主语、谓语、宾语等）
+- 对复杂块用children继续拆分，直到学习者容易理解的短语层级
+- 不要只停在"从句"，要继续往下拆
+- 叶节点可省略children
+grammar：值得学的语法点（如てしまう、に対して），可为[]
+words：值得学习的词汇，跳过助词、标点和极基础词如です/は/が/を/に`
 }
 
 // ──────────────────────────────────────────────
