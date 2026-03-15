@@ -139,6 +139,22 @@ export async function saveSentenceAnalysis(
 // Words (vocabulary book)
 // ──────────────────────────────────────────────
 
+/** Returns per-article { total, analyzed } sentence counts. */
+export async function getArticleAnalysisProgress(): Promise<Map<string, { total: number; analyzed: number }>> {
+  const { data } = await supabase
+    .from('sentences')
+    .select('article_id, is_analyzed')
+  const result = new Map<string, { total: number; analyzed: number }>()
+  for (const row of data ?? []) {
+    if (!row.article_id) continue
+    const cur = result.get(row.article_id) ?? { total: 0, analyzed: 0 }
+    cur.total++
+    if (row.is_analyzed) cur.analyzed++
+    result.set(row.article_id, cur)
+  }
+  return result
+}
+
 /** Returns per-article JLPT level counts aggregated from all analyzed sentence caches. */
 export async function getArticleWordLevels(): Promise<Map<string, Record<string, number>>> {
   const { data } = await supabase

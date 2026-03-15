@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Plus, Trash2, Pencil, FileText, Loader2 } from 'lucide-react'
-import { getArticles, deleteArticle, getArticleWordLevels } from '../lib/db'
+import { getArticles, deleteArticle, getArticleWordLevels, getArticleAnalysisProgress } from '../lib/db'
 import { getCachedImage, setCachedImage, fetchArticleImage } from '../lib/unsplash'
 import type { Article } from '../types'
 import { getProgress } from '../lib/progress'
@@ -43,6 +43,7 @@ export default function ArticlesPage() {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [wordLevels, setWordLevels] = useState<Map<string, Record<string, number>>>(new Map())
+  const [analysisProgress, setAnalysisProgress] = useState<Map<string, { total: number; analyzed: number }>>(new Map())
   const [images, setImages] = useState<Record<string, string>>({})
   const [openCardId, setOpenCardId] = useState<string | null>(null)
   const [dragState, setDragState] = useState<{ id: string; offset: number } | null>(null)
@@ -56,13 +57,23 @@ export default function ArticlesPage() {
 
   useEffect(() => {
     load()
+    // Refresh progress when returning from an article (analysis may have run)
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshProgress() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
+
+  async function refreshProgress() {
+    const progress = await getArticleAnalysisProgress()
+    setAnalysisProgress(progress)
+  }
 
   async function load() {
     try {
-      const [data, levels] = await Promise.all([getArticles(), getArticleWordLevels()])
+      const [data, levels, progress] = await Promise.all([getArticles(), getArticleWordLevels(), getArticleAnalysisProgress()])
       setArticles(data)
       setWordLevels(levels)
+      setAnalysisProgress(progress)
 
       const cached: Record<string, string> = {}
       for (const a of data) {
@@ -270,6 +281,25 @@ export default function ArticlesPage() {
                                   />
                                 </div>
                               )}
+                              {(() => {
+                                const ap = analysisProgress.get(article.id)
+                                if (!ap || ap.analyzed === ap.total) return null
+                                const apPct = Math.round(ap.analyzed / ap.total * 100)
+                                return (
+                                  <div className="mt-1.5">
+                                    <div className="flex items-center justify-between mb-0.5">
+                                      <span className="text-[10px] text-blue-400 dark:text-blue-500">分析中 {ap.analyzed}/{ap.total}</span>
+                                      <span className="text-[10px] text-blue-400 dark:text-blue-500">{apPct}%</span>
+                                    </div>
+                                    <div className="h-0.5 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-blue-400 dark:bg-blue-500 rounded-full transition-all"
+                                        style={{ width: `${apPct}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                )
+                              })()}
                             </div>
                           </div>
                         )
