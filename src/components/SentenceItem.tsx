@@ -277,7 +277,7 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             {/* Words */}
             {analysis.words?.length > 0 && (() => {
               const isPunct = (w: { word: string }) => !/[\u3040-\u9fff\uff21-\uff3a\uff41-\uff5a\u0041-\u007a]/.test(w.word)
-              const nonPunct = analysis.words.filter(w => !isPunct(w))
+              const nonPunct = analysis.words.filter(w => !isPunct(w) && w.meaning)
               const visible = nonPunct.filter(w => isWordVisible(w.jlpt, settings.userLevel))
               const hidden = nonPunct.filter(w => !isWordVisible(w.jlpt, settings.userLevel))
               const display = showHiddenWords ? nonPunct : visible
