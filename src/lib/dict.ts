@@ -12,6 +12,7 @@ export interface DictEntry {
   en?: string[]    // English meanings (fallback when no Chinese)
   p?: number       // pitch accent nucleus position
   ex?: { j: string; c: string }[]  // Tatoeba example sentences
+  jlpt?: string    // JLPT level: N5/N4/N3/N2/N1
 }
 
 type RawEntry = DictEntry | { _a: string }   // { _a: "kanji" } = alias

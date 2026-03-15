@@ -84,7 +84,7 @@ export async function tokenizeSentence(sentence: string, language: 'zh' | 'en'):
       ? (language === 'en' ? entry.en?.[0] : entry.zh?.[0]) ?? entry.en?.[0] ?? ''
       : ''
     const pitch = entry?.p ?? 0
-    const jlpt = ''  // JMdict doesn't include JLPT level; AI-provided entries do
+    const jlpt = entry?.jlpt ?? ''
 
     tokens.push({ word: base, reading, pos: posLabel, meaning, pitch, jlpt })
   }
