@@ -275,7 +275,7 @@ export default function ArticlesPage() {
                                       )}
                                       <span className="ml-auto shrink-0 flex items-center gap-1.5">
                                         {analyzing && (
-                                          <span className="text-[10px] text-blue-400 dark:text-blue-500 font-medium">{apPct}%</span>
+                                          <span className="text-[10px] text-blue-400 dark:text-blue-500 font-medium">分析中 {apPct}%</span>
                                         )}
                                         {prog.total > 0 && (
                                           <span className="text-[10px] text-gray-400 dark:text-gray-500">
