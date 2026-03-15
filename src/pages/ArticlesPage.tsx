@@ -121,31 +121,8 @@ export default function ArticlesPage() {
               ) : (
                 <Link
                   to={`/article/${article.id}`}
-                  className="flex bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
+                  className="flex flex-col bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
                 >
-                  {/* Stacked JLPT word-level bar — N1 red at top, N5 green at bottom */}
-                  {(() => {
-                    const dist = wordLevels.get(article.id)
-                    const total = dist ? Object.values(dist).reduce((a, b) => a + b, 0) : 0
-                    if (!dist || total === 0) {
-                      // Fallback: single color from manually set level
-                      return <div className={`w-1 shrink-0 ${LEVEL_BAR[article.level] ?? 'bg-gray-200 dark:bg-[#333]'}`} />
-                    }
-                    return (
-                      <div className="w-1 shrink-0 flex flex-col">
-                        {JLPT_LEVELS.map(level => {
-                          const count = dist[level] ?? 0
-                          if (count === 0) return null
-                          return (
-                            <div
-                              key={level}
-                              style={{ flex: count, backgroundColor: JLPT_BAR_COLOR[level] }}
-                            />
-                          )
-                        })}
-                      </div>
-                    )
-                  })()}
 
                   {(() => {
                     const prog = getProgress(article.id)
@@ -198,6 +175,29 @@ export default function ArticlesPage() {
                           </button>
                           <ChevronRight size={18} className="text-gray-200 dark:text-gray-700" />
                         </div>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Bottom JLPT bar — N1 red → N5 green, proportional to analyzed word counts */}
+                  {(() => {
+                    const dist = wordLevels.get(article.id)
+                    const total = dist ? Object.values(dist).reduce((a, b) => a + b, 0) : 0
+                    if (!dist || total === 0) {
+                      return <div className={`h-1 shrink-0 ${LEVEL_BAR[article.level] ?? 'bg-gray-100 dark:bg-[#2a2a2a]'}`} />
+                    }
+                    return (
+                      <div className="h-1 shrink-0 flex">
+                        {JLPT_LEVELS.map(level => {
+                          const count = dist[level] ?? 0
+                          if (count === 0) return null
+                          return (
+                            <div
+                              key={level}
+                              style={{ flex: count, backgroundColor: JLPT_BAR_COLOR[level] }}
+                            />
+                          )
+                        })}
                       </div>
                     )
                   })()}
