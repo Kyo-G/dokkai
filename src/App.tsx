@@ -19,6 +19,7 @@ function AppShell() {
   const location = useLocation()
   const [dueCount, setDueCount] = useState(0)
   const [dictStatus, setDictStatus] = useState(getDictStatus())
+  const [showDictBanner, setShowDictBanner] = useState(false)
   useDarkMode() // initializes dark class on <html> based on stored preference
   const hideNav = location.pathname.startsWith('/article/') || location.pathname === '/import'
 
@@ -28,17 +29,23 @@ function AppShell() {
 
   useEffect(() => {
     if (dictStatus === 'ready' || dictStatus === 'unavailable') return
+    // Only show banner if loading takes more than 500ms (avoids flash on cache hit)
+    const showTimer = setTimeout(() => setShowDictBanner(true), 500)
     const id = setInterval(() => {
       const s = getDictStatus()
       setDictStatus(s)
-      if (s === 'ready' || s === 'unavailable') clearInterval(id)
+      if (s === 'ready' || s === 'unavailable') {
+        clearInterval(id)
+        clearTimeout(showTimer)
+        setShowDictBanner(false)
+      }
     }, 300)
-    return () => clearInterval(id)
+    return () => { clearInterval(id); clearTimeout(showTimer) }
   }, [])
 
   return (
     <div className="min-h-screen bg-[#f8f7f4] dark:bg-[#111]">
-      {dictStatus === 'loading' && (
+      {showDictBanner && (
         <div className="fixed top-0 inset-x-0 z-50 bg-blue-500 text-white text-center text-xs py-1">
           词典下载中…
         </div>
