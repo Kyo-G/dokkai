@@ -1,4 +1,5 @@
 import type { Settings, SentenceAnalysis, WordDetails, GrammarDetails } from '../types'
+import { tokenizeSentence } from './tokenizer'
 
 // ──────────────────────────────────────────────
 // Prompt builders
@@ -8,18 +9,16 @@ function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): s
   if (language === 'en') {
     return `Analyze this Japanese sentence. Return JSON only, no other text.
 「${sentence}」
-{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"dict form","reading":"kana reading","pos":"noun/verb/adj/adv/etc","meaning":"","pitch":0,"jlpt":"N3"}]}
+{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
 - structure: cover full sentence
-- grammar: noteworthy points only, may be []
-- words: exclude simple particles (は が を に), pitch=Tokyo accent nucleus (0=flat), jlpt=N5-N1 or ""`
+- grammar: noteworthy grammar patterns only (e.g. てしまう、に対して), may be []`
   }
 
   return `分析以下日语句子，只返回JSON，不要其他文字。
 「${sentence}」
-{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"原形","reading":"假名","pos":"词性","meaning":"中文释义","pitch":0,"jlpt":"N3"}]}
+{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
 - structure：覆盖全句
-- grammar：值得学的语法点，可为[]
-- words：排除简单助词（は が を に），pitch为东京音调核（0=平板），jlpt填N5-N1或""`
+- grammar：值得学的语法点（如てしまう、に対して），可为[]`
 }
 
 // ──────────────────────────────────────────────
@@ -311,11 +310,14 @@ export async function analyzeSentence(
   settings: Settings,
   sentence: string
 ): Promise<SentenceAnalysis> {
-  const prompt = buildSentenceAnalysisPrompt(sentence, settings.language)
-  const text = await callAI(settings, prompt, estimateMaxTokens(sentence))
-  const parsed = extractJSON(text) as SentenceAnalysis
-  // Generate furigana client-side from the returned words — no AI needed
-  parsed.furigana = generateFurigana(sentence, parsed.words ?? [])
+  // Run AI (structure + grammar) and kuromoji tokenization in parallel
+  const [aiText, kuromojiWords] = await Promise.all([
+    callAI(settings, buildSentenceAnalysisPrompt(sentence, settings.language), estimateMaxTokens(sentence)),
+    tokenizeSentence(sentence, settings.language).catch(() => []),
+  ])
+  const parsed = extractJSON(aiText) as SentenceAnalysis
+  parsed.words = kuromojiWords
+  parsed.furigana = generateFurigana(sentence, kuromojiWords)
   return parsed
 }
 
