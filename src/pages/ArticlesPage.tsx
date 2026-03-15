@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Plus, Trash2, Pencil, FileText, Loader2 } from 'lucide-react'
-import { getArticles, deleteArticle, getArticleWordLevels, getArticleAnalysisProgress } from '../lib/db'
+import { getArticles, deleteArticle, getArticleWordLevels, getArticleAnalysisProgress, getAllUnanalyzedSentences, saveSentenceAnalysis } from '../lib/db'
+import { analyzeSentence } from '../lib/ai'
 import { getCachedImage, setCachedImage, fetchArticleImage } from '../lib/unsplash'
 import type { Article } from '../types'
 import { getProgress } from '../lib/progress'
@@ -54,18 +55,44 @@ export default function ArticlesPage() {
     axis: 'x' | 'y' | null
     baseOffset: number
   } | null>(null)
+  const analyzeActiveRef = useRef(false)
 
   useEffect(() => {
     load()
-    // Refresh progress when returning from an article (analysis may have run)
     const onVisible = () => { if (document.visibilityState === 'visible') refreshProgress() }
     document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      analyzeActiveRef.current = false
+    }
   }, [])
 
   async function refreshProgress() {
     const progress = await getArticleAnalysisProgress()
     setAnalysisProgress(progress)
+  }
+
+  async function runBackgroundAnalysis() {
+    const apiKey = settings.claudeKey || settings.openaiKey || settings.geminiKey || settings.deepseekKey
+    if (!apiKey) return
+    const unanalyzed = await getAllUnanalyzedSentences()
+    if (unanalyzed.length === 0) return
+    analyzeActiveRef.current = true
+    for (const sentence of unanalyzed) {
+      if (!analyzeActiveRef.current) break
+      try {
+        const result = await analyzeSentence(settings, sentence.content)
+        if (!analyzeActiveRef.current) break
+        await saveSentenceAnalysis(sentence.id, result)
+        setAnalysisProgress(prev => {
+          const next = new Map(prev)
+          const cur = next.get(sentence.article_id) ?? { total: 0, analyzed: 0 }
+          next.set(sentence.article_id, { ...cur, analyzed: cur.analyzed + 1 })
+          return next
+        })
+      } catch { /* skip failed sentence */ }
+    }
+    analyzeActiveRef.current = false
   }
 
   async function load() {
@@ -96,6 +123,7 @@ export default function ArticlesPage() {
       console.error(e)
     } finally {
       setLoading(false)
+      runBackgroundAnalysis()
     }
   }
 

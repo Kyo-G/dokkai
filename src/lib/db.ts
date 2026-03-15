@@ -139,6 +139,17 @@ export async function saveSentenceAnalysis(
 // Words (vocabulary book)
 // ──────────────────────────────────────────────
 
+/** Returns all unanalyzed sentences across all articles, ordered by article + position. */
+export async function getAllUnanalyzedSentences(): Promise<Sentence[]> {
+  const { data } = await supabase
+    .from('sentences')
+    .select('*')
+    .eq('is_analyzed', false)
+    .order('article_id')
+    .order('position', { ascending: true })
+  return data || []
+}
+
 /** Returns per-article { total, analyzed } sentence counts. */
 export async function getArticleAnalysisProgress(): Promise<Map<string, { total: number; analyzed: number }>> {
   const { data } = await supabase
