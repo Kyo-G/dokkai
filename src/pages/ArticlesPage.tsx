@@ -45,7 +45,14 @@ export default function ArticlesPage() {
   const [wordLevels, setWordLevels] = useState<Map<string, Record<string, number>>>(new Map())
   const [images, setImages] = useState<Record<string, string>>({})
   const [openCardId, setOpenCardId] = useState<string | null>(null)
-  const swipeTouchRef = useRef<{ x: number; y: number; id: string } | null>(null)
+  const [dragState, setDragState] = useState<{ id: string; offset: number } | null>(null)
+  const dragRef = useRef<{
+    id: string
+    startX: number
+    startY: number
+    axis: 'x' | 'y' | null
+    baseOffset: number
+  } | null>(null)
 
   useEffect(() => {
     load()
@@ -98,23 +105,40 @@ export default function ArticlesPage() {
   }
 
   function handleCardTouchStart(e: React.TouchEvent, id: string) {
-    swipeTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, id }
+    // Close other open card when starting a new touch
+    if (openCardId && openCardId !== id) setOpenCardId(null)
+    dragRef.current = {
+      id,
+      startX: e.touches[0].clientX,
+      startY: e.touches[0].clientY,
+      axis: null,
+      baseOffset: openCardId === id ? -ACTION_WIDTH : 0,
+    }
   }
 
-  function handleCardTouchEnd(e: React.TouchEvent) {
-    const t = swipeTouchRef.current
-    if (!t) return
-    const dx = e.changedTouches[0].clientX - t.x
-    const dy = e.changedTouches[0].clientY - t.y
-    // Only trigger on clearly horizontal swipes
-    if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 40) {
-      if (dx < 0) setOpenCardId(t.id)
-      else setOpenCardId(null)
-    } else if (Math.abs(dx) < 10 && openCardId === t.id) {
-      // Tap on open card → close
-      setOpenCardId(null)
+  function handleCardTouchMove(e: React.TouchEvent) {
+    const drag = dragRef.current
+    if (!drag) return
+    const dx = e.touches[0].clientX - drag.startX
+    const dy = e.touches[0].clientY - drag.startY
+    if (!drag.axis) {
+      if (Math.abs(dx) > Math.abs(dy) + 4) drag.axis = 'x'
+      else if (Math.abs(dy) > Math.abs(dx) + 4) drag.axis = 'y'
+      else return
     }
-    swipeTouchRef.current = null
+    if (drag.axis === 'y') return
+    const newOffset = Math.max(-ACTION_WIDTH, Math.min(0, drag.baseOffset + dx))
+    setDragState({ id: drag.id, offset: newOffset })
+  }
+
+  function handleCardTouchEnd() {
+    const drag = dragRef.current
+    if (!drag) { dragRef.current = null; return }
+    if (drag.axis === 'x' && dragState) {
+      setOpenCardId(dragState.offset < -ACTION_WIDTH / 2 ? drag.id : null)
+    }
+    setDragState(null)
+    dragRef.current = null
   }
 
   return (
@@ -167,6 +191,7 @@ export default function ArticlesPage() {
                 <div
                   className="relative overflow-hidden rounded-2xl"
                   onTouchStart={e => handleCardTouchStart(e, article.id)}
+                  onTouchMove={handleCardTouchMove}
                   onTouchEnd={handleCardTouchEnd}
                 >
                   {/* Action buttons revealed on left swipe */}
@@ -193,8 +218,9 @@ export default function ArticlesPage() {
                   {/* Sliding card content */}
                   <div
                     style={{
-                      transform: `translateX(${openCardId === article.id ? -ACTION_WIDTH : 0}px)`,
-                      transition: 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)',
+                      transform: `translateX(${dragState?.id === article.id ? dragState.offset : openCardId === article.id ? -ACTION_WIDTH : 0}px)`,
+                      transition: dragState?.id === article.id ? 'none' : 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)',
+                      willChange: 'transform',
                     }}
                   >
                     <Link
@@ -207,15 +233,14 @@ export default function ArticlesPage() {
                         const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
                         return (
                           <div className="flex items-stretch">
-                            {/* Thumbnail — 16:9 */}
+                            {/* Thumbnail — 4:3 */}
                             {images[article.id] && (
-                              <div className="shrink-0 self-start overflow-hidden" style={{ width: 128, aspectRatio: '16/9' }}>
-                                <img
-                                  src={images[article.id]}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
+                              <img
+                                src={images[article.id]}
+                                alt=""
+                                className="shrink-0 self-stretch object-cover"
+                                style={{ width: 96, aspectRatio: '4/3' }}
+                              />
                             )}
 
                             {/* Content */}
