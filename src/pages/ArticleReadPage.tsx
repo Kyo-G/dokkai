@@ -273,9 +273,6 @@ export default function ArticleReadPage() {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                {mode === 'read' ? t.readModeHint : t.studyModeHint}
-              </p>
             </div>
 
             {/* Pre-analysis progress ring */}
