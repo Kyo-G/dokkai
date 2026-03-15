@@ -1,5 +1,4 @@
 import type { Settings, SentenceAnalysis, WordDetails, GrammarDetails } from '../types'
-import { tokenizeSentence } from './tokenizer'
 
 // ──────────────────────────────────────────────
 // Prompt builders
@@ -9,18 +8,28 @@ function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): s
   if (language === 'en') {
     return `Analyze this Japanese sentence. Return JSON only, no other text.
 「${sentence}」
-{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction","modifies":"word being modified (only for Modifier role)"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
-- structure: cover full sentence
-- modifies: only include on Modifier parts; value is the word/phrase being modified (e.g. "noun" or "verb")
-- grammar: noteworthy grammar patterns only (e.g. てしまう、に対して), may be []`
+{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction","modifies":"word being modified (only for Modifier role)"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"dictionary form","reading":"hiragana","pos":"noun/verb/i-adj/na-adj/adverb","meaning":"concise English meaning"}]}
+- structure: cover full sentence; modifies: only on Modifier, value = word being modified
+- grammar: noteworthy patterns only (e.g. てしまう、に対して), may be []
+- words: content words worth studying — strict rules:
+  • ONLY include: nouns, verbs, い-adj, な-adj, adverbs
+  • NEVER include: particles (は/が/を/に/で/と/も/から/まで/より/へ/の), auxiliaries (た/だ/ます/です/れる/られる/ない/たい/そう/よう/らしい), conjunctions, pronouns, numbers
+  • Always use dictionary form: 食べた→食べる, 行きました→行く, 美しかった→美しい, 静かな→静か
+  • Compound suru-verbs: write as one word 撮影する, 勉強する (never split into 撮影 + する)
+  • Skip ultra-basic words: ある, いる, なる, する, よい/いい unless essential`
   }
 
   return `分析以下日语句子，只返回JSON，不要其他文字。
 「${sentence}」
-{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词","modifies":"被修饰的词（仅修饰成分需要填）"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
-- structure：覆盖全句
-- modifies：仅在role为修饰成分时填写，值为被修饰的核心词（如「こと」「人」「時間」等）
-- grammar：值得学的语法点（如てしまう、に対して），可为[]`
+{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词","modifies":"被修饰的词（仅修饰成分需要填）"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"原形","reading":"平假名","pos":"名词/动词/い形容词/な形容词/副词","meaning":"简洁中文释义"}]}
+- structure：覆盖全句；modifies：仅修饰成分填写，值为被修饰的核心词
+- grammar：值得学的语法点（如てしまう、に対して），可为[]
+- words：值得学习的实词，严格规则：
+  • 只选：名词、动词、い形容词、な形容词、副词
+  • 绝不选：助词（は/が/を/に/で/と/も/から/まで/より/へ/の）、助动词（た/だ/ます/です/れる/られる/ない/たい/そう/よう/らしい）、接续词、代词、数词
+  • 必须用原形：食べた→食べる，行きました→行く，美しかった→美しい，静かな→静か
+  • サ変复合动词写成一个词：撮影する、勉強する（不要拆成撮影＋する）
+  • 跳过极基础词：ある、いる、なる、する、よい/いい（除非是句子重点）`
 }
 
 // ──────────────────────────────────────────────
@@ -312,14 +321,26 @@ export async function analyzeSentence(
   settings: Settings,
   sentence: string
 ): Promise<SentenceAnalysis> {
-  // AI handles structure + grammar; kuromoji handles word extraction
-  const [aiText, kuromojiWords] = await Promise.all([
-    callAI(settings, buildSentenceAnalysisPrompt(sentence, settings.language), estimateMaxTokens(sentence)),
-    tokenizeSentence(sentence, settings.language).catch(() => []),
-  ])
+  const aiText = await callAI(settings, buildSentenceAnalysisPrompt(sentence, settings.language), estimateMaxTokens(sentence))
   const parsed = extractJSON(aiText) as SentenceAnalysis
-  parsed.words = kuromojiWords
-  parsed.furigana = generateFurigana(sentence, kuromojiWords)
+
+  // Enrich AI words with local dictionary data (reading, meaning, pitch, jlpt)
+  if (parsed.words?.length) {
+    const { lookupWordAsync } = await import('./dict')
+    parsed.words = await Promise.all(parsed.words.map(async w => {
+      const entry = await lookupWordAsync(w.word, w.reading)
+      if (!entry) return w
+      return {
+        ...w,
+        reading: entry.r ?? w.reading,
+        meaning: (settings.language === 'zh' ? entry.zh?.[0] : entry.en?.[0]) ?? entry.en?.[0] ?? w.meaning,
+        ...(entry.p !== undefined ? { pitch: entry.p } : {}),
+        ...(entry.jlpt ? { jlpt: entry.jlpt } : {}),
+      }
+    }))
+  }
+
+  parsed.furigana = generateFurigana(sentence, parsed.words ?? [])
   return parsed
 }
 
