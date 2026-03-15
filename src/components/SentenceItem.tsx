@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Volume2, Square, RefreshCw } from 'lucide-react'
 import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint } from '../types'
-import { analyzeSentence } from '../lib/ai'
+import { analyzeSentence, generateFurigana } from '../lib/ai'
+import { tokenizeSentence } from '../lib/tokenizer'
 import { saveSentenceAnalysis, addGrammar, addWord } from '../lib/db'
 import { useSettings } from '../hooks/useSettings'
 import { useSpeech } from '../hooks/useSpeech'
@@ -68,6 +69,22 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
   const [savingWord, setSavingWord] = useState<string | null>(null)
   const [showHiddenGrammar, setShowHiddenGrammar] = useState(false)
   const [showHiddenWords, setShowHiddenWords] = useState(false)
+
+  // If a sentence was analyzed before kuromoji was introduced, words may be missing.
+  // Re-tokenize automatically when the panel is expanded and words are absent.
+  useEffect(() => {
+    if (!expanded || !analysis || (analysis.words && analysis.words.length > 0)) return
+    tokenizeSentence(sentence.content, settings.language)
+      .then(words => {
+        if (words.length === 0) return
+        const furigana = analysis.furigana || generateFurigana(sentence.content, words)
+        const updated = { ...analysis, words, furigana }
+        setAnalysis(updated)
+        saveSentenceAnalysis(sentence.id, updated).catch(() => {})
+        onAnalyzed(sentence.id, updated)
+      })
+      .catch(() => {})
+  }, [expanded])
 
   async function runAnalysis() {
     setLoading(true)
