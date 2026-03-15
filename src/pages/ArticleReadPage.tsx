@@ -327,7 +327,7 @@ export default function ArticleReadPage() {
                   </circle>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-[9px] font-bold text-blue-500 dark:text-blue-400 select-none leading-none">{total - done}</span>
+                  <span className="text-[9px] font-bold text-blue-500 dark:text-blue-400 select-none leading-none">{Math.round(done / total * 100)}%</span>
                 </div>
               </div>
             )
