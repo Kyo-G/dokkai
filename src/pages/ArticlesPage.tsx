@@ -15,6 +15,14 @@ const LEVEL_COLORS: Record<string, string> = {
   N1: 'bg-red-100 text-red-700',
 }
 
+const LEVEL_BAR: Record<string, string> = {
+  N5: 'bg-green-400',
+  N4: 'bg-blue-400',
+  N3: 'bg-yellow-400',
+  N2: 'bg-orange-400',
+  N1: 'bg-red-500',
+}
+
 export default function ArticlesPage() {
   const navigate = useNavigate()
   const { settings } = useSettings()
@@ -103,58 +111,65 @@ export default function ArticlesPage() {
               ) : (
                 <Link
                   to={`/article/${article.id}`}
-                  className="block bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#333] rounded-2xl p-4"
+                  className="flex bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
                 >
+                  {/* Level accent bar */}
+                  <div className={`w-1 shrink-0 ${LEVEL_BAR[article.level] ?? 'bg-gray-200 dark:bg-[#333]'}`} />
+
                   {(() => {
                     const prog = getProgress(article.id)
                     const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
                     return (
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{article.title}</span>
-                        {article.level && (
-                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
-                            {article.level}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 font-jp leading-relaxed line-clamp-2">
-                        {article.content.slice(0, 80)}…
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <p className="text-xs text-gray-300 dark:text-gray-600">{formatDate(article.created_at)}</p>
-                        {prog.total > 0 && (
-                          <div className="flex items-center gap-1.5 flex-1">
-                            <div className="flex-1 h-1 bg-gray-100 dark:bg-[#333] rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
-                              {t.sentenceCount(prog.readIds.length)}/{t.sentenceCount(prog.total)}
+                      <div className="flex-1 min-w-0 px-4 py-3.5 flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          {/* Title + level badge */}
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug">
+                              {article.title}
                             </span>
+                            {article.level && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 mt-0.5 ${LEVEL_COLORS[article.level] || ''}`}>
+                                {article.level}
+                              </span>
+                            )}
                           </div>
-                        )}
+
+                          {/* Date + progress */}
+                          <div className="flex items-center gap-2 mt-2.5">
+                            <span className="text-xs text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
+                            {prog.total > 0 && (
+                              <>
+                                <div className="flex-1 h-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
+                                  {t.sentenceCount(prog.readIds.length)}/{t.sentenceCount(prog.total)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-0.5 shrink-0 -mr-1">
+                          <button
+                            onClick={e => { e.preventDefault(); navigate(`/import?edit=${article.id}`) }}
+                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-400"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            onClick={e => { e.preventDefault(); setDeleteId(article.id) }}
+                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                          <ChevronRight size={18} className="text-gray-200 dark:text-gray-700" />
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={e => { e.preventDefault(); navigate(`/import?edit=${article.id}`) }}
-                        className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-400"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={e => { e.preventDefault(); setDeleteId(article.id) }}
-                        className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                      <ChevronRight size={18} className="text-gray-300 dark:text-gray-600" />
-                    </div>
-                  </div>
                     )
                   })()}
                 </Link>
