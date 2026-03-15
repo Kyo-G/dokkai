@@ -148,72 +148,74 @@ export default function ArticlesPage() {
                   to={`/article/${article.id}`}
                   className="flex flex-col bg-white dark:bg-[#1e1e1e] border border-gray-200 dark:border-[#2a2a2a] rounded-2xl overflow-hidden"
                 >
-
-                  {/* Cover image */}
-                  {images[article.id] && (
-                    <img
-                      src={images[article.id]}
-                      alt=""
-                      className="w-full h-36 object-cover"
-                    />
-                  )}
-
                   {(() => {
                     const prog = getProgress(article.id)
                     const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
                     return (
-                      <div className="flex-1 min-w-0 px-4 py-3.5 flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          {/* Title */}
-                          <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2">
-                            {article.title}
-                          </span>
+                      <div className="flex items-stretch gap-0">
+                        {/* Thumbnail */}
+                        {images[article.id] && (
+                          <img
+                            src={images[article.id]}
+                            alt=""
+                            className="w-20 h-20 object-cover shrink-0"
+                          />
+                        )}
 
-                          {/* Date + progress + level badge */}
-                          <div className="flex items-center gap-2 mt-2.5">
-                            <span className="text-xs text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
-                            {prog.total > 0 && (
-                              <>
-                                <div className="flex-1 h-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
-                                    style={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                                <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
-                                  {t.sentenceCount(prog.readIds.length)}/{t.sentenceCount(prog.total)}
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 px-3 py-3 flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            {/* Title */}
+                            <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2 text-sm">
+                              {article.title}
+                            </span>
+
+                            {/* Date + progress + level badge */}
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-[11px] text-gray-300 dark:text-gray-600 shrink-0">{formatDate(article.created_at)}</span>
+                              {article.level && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${LEVEL_COLORS[article.level] || ''}`}>
+                                  {article.level}
                                 </span>
-                              </>
-                            )}
-                            {article.level && (
-                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ml-auto ${LEVEL_COLORS[article.level] || ''}`}>
-                                {article.level}
-                              </span>
+                              )}
+                              {prog.total > 0 && (
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 ml-auto">
+                                  {prog.readIds.length}/{prog.total}
+                                </span>
+                              )}
+                            </div>
+                            {prog.total > 0 && (
+                              <div className="h-1 bg-gray-100 dark:bg-[#2a2a2a] rounded-full overflow-hidden mt-1.5">
+                                <div
+                                  className="h-full bg-green-400 dark:bg-green-600 rounded-full transition-all"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
                             )}
                           </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-0.5 shrink-0 -mr-1">
-                          <button
-                            onClick={e => { e.preventDefault(); navigate(`/import?edit=${article.id}`) }}
-                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-400"
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            onClick={e => { e.preventDefault(); setDeleteId(article.id) }}
-                            className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                          <ChevronRight size={18} className="text-gray-200 dark:text-gray-700" />
+                          {/* Actions */}
+                          <div className="flex items-center gap-0.5 shrink-0 -mr-1 -mt-1">
+                            <button
+                              onClick={e => { e.preventDefault(); navigate(`/import?edit=${article.id}`) }}
+                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-blue-400"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={e => { e.preventDefault(); setDeleteId(article.id) }}
+                              className="p-1.5 text-gray-300 dark:text-gray-600 hover:text-red-400"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                            <ChevronRight size={16} className="text-gray-200 dark:text-gray-700" />
+                          </div>
                         </div>
                       </div>
                     )
                   })()}
 
-                  {/* Bottom JLPT bar — N1 red → N5 green, proportional to analyzed word counts */}
+                  {/* Bottom JLPT bar */}
                   {(() => {
                     const dist = wordLevels.get(article.id)
                     const total = dist ? Object.values(dist).reduce((a, b) => a + b, 0) : 0

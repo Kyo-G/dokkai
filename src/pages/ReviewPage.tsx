@@ -37,7 +37,7 @@ export default function ReviewPage() {
 
   useEffect(() => { load() }, [])
 
-  // Fetch user's own sentences containing this word when the card is flipped
+  // When card flips: auto-read the word and fetch user examples
   useEffect(() => {
     const current = queue[0]
     if (!flipped || !current || current.type !== 'word') {
@@ -45,6 +45,7 @@ export default function ReviewPage() {
       return
     }
     const word = (current as Extract<AnyReviewItem, { type: 'word' }>).word.word
+    speak(word)
     setUserExamples(null)
     getUserExamplesForWord(word)
       .then(setUserExamples)
@@ -229,9 +230,19 @@ export default function ReviewPage() {
               {/* Front: key item */}
               {isWord && (
                 <div className="flex items-center justify-center gap-3 mb-2">
-                  <div className="font-jp text-4xl font-bold text-gray-900 dark:text-gray-100" lang="ja">
-                    {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
-                  </div>
+                  {flipped ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); setShowDetail(true) }}
+                      className="font-jp text-4xl font-bold text-gray-900 dark:text-gray-100"
+                      lang="ja"
+                    >
+                      {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
+                    </button>
+                  ) : (
+                    <div className="font-jp text-4xl font-bold text-gray-900 dark:text-gray-100" lang="ja">
+                      {(current as Extract<AnyReviewItem, { type: 'word' }>).word.word}
+                    </div>
+                  )}
                   <button
                     onClick={e => {
                       e.stopPropagation()
@@ -295,12 +306,6 @@ export default function ReviewPage() {
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{w.details_cache.examples[0].translation}</div>
                           </div>
                         )}
-                        <button
-                          onClick={e => { e.stopPropagation(); setShowDetail(true) }}
-                          className="text-xs text-red-700 underline w-full text-center mt-1"
-                        >
-                          {t.viewDetails}
-                        </button>
                       </>
                     )
                   })()}

@@ -61,7 +61,10 @@ export default function SwipeableRow({
     setOffset(clamped)
   }
 
-  function onTouchEnd() {
+  function onTouchEnd(e: React.TouchEvent) {
+    // Stop propagation when we handled an x-axis swipe so parent
+    // page-level swipe handlers don't also fire
+    if (axis.current === 'x') e.stopPropagation()
     if (!fired.current) {
       if (offset <= -threshold) { fired.current = true; onSwipeLeft?.() }
       else if (offset >= threshold) { fired.current = true; onSwipeRight?.() }

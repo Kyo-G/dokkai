@@ -56,7 +56,7 @@ export const zh = {
   wordBadge: '单词',
   grammarBadge: '语法',
   tapToFlip: '点击翻转查看答案',
-  readSentences: '读过的例句',
+  readSentences: '例句',
   viewDetails: '查看详情',
   reviewComplete: '今日复习完成！',
   reviewCompletePerfect: '全部掌握，表现完美！',
@@ -109,7 +109,7 @@ export const zh = {
 
   // WordDetailSheet
   definition: '释义',
-  mySentences: '我读过的句子',
+  mySentences: '例句',
   searching: '搜索中…',
   tatoebaExamples: 'Tatoeba 例句',
   aiUsage: 'AI 用法解析',
@@ -189,7 +189,7 @@ export const en: Translations = {
   wordBadge: 'Word',
   grammarBadge: 'Grammar',
   tapToFlip: 'Tap to reveal answer',
-  readSentences: 'Read sentences',
+  readSentences: 'Examples',
   viewDetails: 'View details',
   reviewComplete: 'Review complete!',
   reviewCompletePerfect: 'Perfect score! Well done!',
@@ -242,7 +242,7 @@ export const en: Translations = {
 
   // WordDetailSheet
   definition: 'Meaning',
-  mySentences: 'My read sentences',
+  mySentences: 'Examples',
   searching: 'Searching…',
   tatoebaExamples: 'Tatoeba Examples',
   aiUsage: 'AI Usage Notes',
