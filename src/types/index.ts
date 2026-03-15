@@ -40,8 +40,7 @@ export interface SentenceAnalysis {
 
 export interface StructurePart {
   text: string
-  role: string // 主语 / 谓语 / 宾语 / 修饰 / 从句 / 原因 / 目的 / 条件 etc.
-  children?: StructurePart[]
+  role: string // 主语 / 谓语 / 宾语 / 修饰成分 etc.
 }
 
 export interface GrammarPoint {

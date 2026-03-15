@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Loader2, BookmarkPlus, Volume2, Square, RefreshCw } from 'lucide-react'
-import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint, StructurePart } from '../types'
+import type { Sentence, SentenceAnalysis, WordInSentence, GrammarPoint } from '../types'
 import { analyzeSentence, generateFurigana } from '../lib/ai'
 import { tokenizeSentence } from '../lib/tokenizer'
 import { saveSentenceAnalysis, addGrammar, addWord } from '../lib/db'
@@ -26,55 +26,20 @@ function isWordVisible(wordJlpt: string | undefined, userLevel: string): boolean
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  '主语':   'bg-blue-100   text-blue-800   dark:bg-blue-950/40   dark:text-blue-300',
-  'Subject':'bg-blue-100   text-blue-800   dark:bg-blue-950/40   dark:text-blue-300',
-  '谓语':   'bg-red-100    text-red-800    dark:bg-red-950/40    dark:text-red-300',
-  'Predicate':'bg-red-100  text-red-800    dark:bg-red-950/40    dark:text-red-300',
-  '宾语':   'bg-green-100  text-green-800  dark:bg-green-950/40  dark:text-green-300',
-  'Object': 'bg-green-100  text-green-800  dark:bg-green-950/40  dark:text-green-300',
-  '修饰':   'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300',
-  'Modifier':'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300',
-  '从句':   'bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300',
-  'Clause': 'bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300',
-  '动词':   'bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300',
-  'Verb':   'bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300',
+  '主语': 'bg-blue-100 text-blue-800',
+  '谓语': 'bg-red-100 text-red-800',
+  '宾语': 'bg-green-100 text-green-800',
+  '修饰成分': 'bg-yellow-100 text-yellow-800',
+  '补语': 'bg-purple-100 text-purple-800',
+  '连词': 'bg-gray-100 text-gray-600',
+  '助词': 'bg-gray-100 text-gray-500',
 }
 
 function roleColor(role: string): string {
   for (const key of Object.keys(ROLE_COLORS)) {
     if (role.includes(key)) return ROLE_COLORS[key]
   }
-  return 'bg-gray-100 text-gray-600 dark:bg-[#2a2a2a] dark:text-gray-400'
-}
-
-const CORE_ROLES = ['主语', '谓语', '宾语', 'Subject', 'Predicate', 'Object']
-function hasCoreRole(children: StructurePart[]): boolean {
-  return children.some(c => CORE_ROLES.some(r => c.role.includes(r)))
-}
-
-function StructureNode({ part, depth }: { part: StructurePart; depth: number }) {
-  const [open, setOpen] = useState(false)
-  const expandable = !!(part.children?.length && hasCoreRole(part.children))
-  return (
-    <div className="inline-block" style={{ marginLeft: depth * 12 }}>
-      <div
-        className={`inline-flex flex-col rounded-lg px-2 py-1 mb-1 ${roleColor(part.role)} ${expandable ? 'cursor-pointer select-none' : ''}`}
-        onClick={expandable ? () => setOpen(v => !v) : undefined}
-      >
-        <span className="text-[9px] opacity-60 leading-none mb-0.5">
-          {part.role}{expandable ? (open ? ' ▲' : ' ▼') : ''}
-        </span>
-        <span className="font-jp text-sm font-medium leading-snug" lang="ja">{part.text}</span>
-      </div>
-      {expandable && open && (
-        <div className="border-l-2 border-gray-200 dark:border-[#333] ml-2 pl-2 mb-1 flex flex-wrap gap-1.5 items-start">
-          {part.children!.map((child, i) => (
-            <StructureNode key={i} part={child} depth={0} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
+  return 'bg-gray-100 text-gray-600'
 }
 
 interface Props {
@@ -242,9 +207,12 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
             {analysis.structure?.length > 0 && (
               <div>
                 <div className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wide mb-2">{t.sentenceStructure}</div>
-                <div className="flex flex-wrap gap-1.5 items-start">
+                <div className="flex flex-wrap gap-1.5">
                   {analysis.structure.map((part, i) => (
-                    <StructureNode key={i} part={part} depth={0} />
+                    <span key={i} className={`inline-flex flex-col items-center rounded-lg px-2 py-1 ${roleColor(part.role)}`}>
+                      <span className="font-jp text-sm font-medium" lang="ja">{part.text}</span>
+                      <span className="text-[10px] opacity-70 mt-0.5">{part.role}</span>
+                    </span>
                   ))}
                 </div>
               </div>
