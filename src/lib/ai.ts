@@ -9,16 +9,18 @@ function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): s
   if (language === 'en') {
     return `Analyze this Japanese sentence. Return JSON only, no other text.
 「${sentence}」
-{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
+{"structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"noun/verb/adjective/adverb/particle/auxiliary/conjunction/prefix/suffix","meaning":"concise English meaning"}]}
 - structure: cover full sentence
-- grammar: noteworthy grammar patterns only (e.g. てしまう、に対して), may be []`
+- grammar: noteworthy grammar patterns only (e.g. てしまう、に対して), may be []
+- words: vocabulary worth learning (skip particles, punctuation, and very basic words like です/は/が/を/に)`
   }
 
   return `分析以下日语句子，只返回JSON，不要其他文字。
 「${sentence}」
-{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}]}
+{"structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"","reading":"","pos":"名词/动词/形容词/副词/助词/助动词/连词/前缀/后缀","meaning":"简洁中文释义"}]}
 - structure：覆盖全句
-- grammar：值得学的语法点（如てしまう、に対して），可为[]`
+- grammar：值得学的语法点（如てしまう、に対して），可为[]
+- words：值得学习的词汇（跳过助词、标点和极基础词如です/は/が/を/に）`
 }
 
 // ──────────────────────────────────────────────
@@ -310,14 +312,29 @@ export async function analyzeSentence(
   settings: Settings,
   sentence: string
 ): Promise<SentenceAnalysis> {
-  // Run AI (structure + grammar) and kuromoji tokenization in parallel
-  const [aiText, kuromojiWords] = await Promise.all([
-    callAI(settings, buildSentenceAnalysisPrompt(sentence, settings.language), estimateMaxTokens(sentence)),
-    tokenizeSentence(sentence, settings.language).catch(() => []),
-  ])
+  const aiText = await callAI(settings, buildSentenceAnalysisPrompt(sentence, settings.language), estimateMaxTokens(sentence))
   const parsed = extractJSON(aiText) as SentenceAnalysis
-  parsed.words = kuromojiWords
-  parsed.furigana = generateFurigana(sentence, kuromojiWords)
+
+  // Enrich AI words with local dictionary data (reading, meaning, pitch, jlpt)
+  if (parsed.words?.length) {
+    const { lookupWordAsync } = await import('./dict')
+    parsed.words = await Promise.all(parsed.words.map(async w => {
+      const entry = await lookupWordAsync(w.word, w.reading)
+      if (!entry) return w
+      const meaning = settings.language === 'zh'
+        ? (entry.zh?.[0] ?? entry.en?.[0] ?? w.meaning)
+        : (entry.en?.[0] ?? w.meaning)
+      return {
+        ...w,
+        reading: entry.r ?? w.reading,
+        meaning,
+        ...(entry.p !== undefined ? { pitch: entry.p } : {}),
+        ...(entry.jlpt ? { jlpt: entry.jlpt } : {}),
+      }
+    }))
+  }
+
+  parsed.furigana = generateFurigana(sentence, parsed.words ?? [])
   return parsed
 }
 
