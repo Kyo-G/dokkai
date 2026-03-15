@@ -45,7 +45,7 @@ interface Props {
   sentence: Sentence
   articleId: string
   onAnalyzed: (id: string, analysis: SentenceAnalysis) => void
-  onExpand?: (content: string | null) => void
+  onExpand?: (sentenceId: string | null, content: string | null) => void
   showFurigana?: boolean
   isRead?: boolean
   onRead?: () => void
@@ -87,11 +87,11 @@ export default function SentenceItem({ sentence, articleId, onAnalyzed, onExpand
   async function handleExpand() {
     if (expanded) {
       setExpanded(false)
-      onExpand?.(null)
+      onExpand?.(null, null)
       return
     }
     setExpanded(true)
-    onExpand?.(sentence.content)
+    onExpand?.(sentence.id, sentence.content)
     onRead?.()
     if (analysis) return
     await runAnalysis()

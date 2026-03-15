@@ -54,6 +54,8 @@ export default function ArticleReadPage() {
   const [error, setError] = useState('')
   const [highlightId, setHighlightId] = useState<string | null>(targetSentenceId)
   const [expandedSentence, setExpandedSentence] = useState<string | null>(null)
+  const [expandedSentenceId, setExpandedSentenceId] = useState<string | null>(null)
+  const [bannerVisible, setBannerVisible] = useState(false)
   const [showFurigana, setShowFurigana] = useState(false)
   const [preProgress, setPreProgress] = useState<{ done: number; total: number } | null>(null)
   const preAnalyzeActive = useRef(false)
@@ -198,6 +200,18 @@ export default function ArticleReadPage() {
 
   useEffect(() => () => stop(), [])
 
+  // Show sticky banner only when expanded sentence has scrolled above viewport
+  useEffect(() => {
+    if (!expandedSentenceId) { setBannerVisible(false); return }
+    const el = sentenceRefs.current[expandedSentenceId]
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => {
+      setBannerVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0)
+    }, { threshold: 0, rootMargin: '-50px 0px 0px 0px' })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [expandedSentenceId])
+
   const startReading = useCallback((fromIndex: number) => {
     const items = sentences.map(s => ({ id: s.id, text: s.content }))
     speakSequence(items, fromIndex, setSpeakingId)
@@ -332,8 +346,8 @@ export default function ArticleReadPage() {
           )}
         </div>
 
-        {/* Expanded sentence banner — study mode only */}
-        {mode === 'study' && expandedSentence && (
+        {/* Expanded sentence banner — only when sentence has scrolled above view */}
+        {mode === 'study' && bannerVisible && expandedSentence && (
           <div className="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-sm border-b border-gray-200 dark:border-[#333] px-4 py-2.5">
             <p className="font-jp text-sm text-gray-700 dark:text-gray-300 leading-relaxed max-h-20 overflow-y-auto" lang="ja">
               {expandedSentence}
@@ -397,7 +411,7 @@ export default function ArticleReadPage() {
                   sentence={sentence}
                   articleId={article.id}
                   onAnalyzed={handleAnalyzed}
-                  onExpand={content => setExpandedSentence(content)}
+                  onExpand={(sid, content) => { setExpandedSentenceId(sid); setExpandedSentence(content) }}
                   showFurigana={showFurigana}
                   isRead={readIds.has(sentence.id)}
                   onRead={() => {
