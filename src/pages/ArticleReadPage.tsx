@@ -7,6 +7,7 @@ import type { Article, Sentence, SentenceAnalysis } from '../types'
 import SentenceItem from '../components/SentenceItem'
 import Furigana from '../components/Furigana'
 import { analyzeSentence } from '../lib/ai'
+import { getCachedImage } from '../lib/unsplash'
 import { useSettings } from '../hooks/useSettings'
 import { splitIntoSentences } from '../lib/sentences'
 import { useSpeech } from '../hooks/useSpeech'
@@ -62,6 +63,7 @@ export default function ArticleReadPage() {
   const lastSeenRef = useRef<string | null>(null)
   const [vocabIndex, setVocabIndex] = useState<Map<string, number>>(new Map())
   const [speakingId, setSpeakingId] = useState<string | null>(null)
+  const [coverImage, setCoverImage] = useState<string | null>(null)
   const { stop, speaking, speakSequence } = useSpeech()
 
   // Swipe-to-switch-mode
@@ -84,6 +86,7 @@ export default function ArticleReadPage() {
       if (!art) { setError('文章不存在'); return }
       setArticle(art)
       setSentences(sents)
+      setCoverImage(getCachedImage(articleId))
 
       const prog = getProgress(articleId)
       setReadIds(new Set(prog.readIds))
@@ -345,6 +348,11 @@ export default function ArticleReadPage() {
           </div>
         )}
       </div>
+
+      {/* ── Cover image ─────────────────────────────────────── */}
+      {coverImage && (
+        <img src={coverImage} alt="" className="w-full h-48 object-cover" />
+      )}
 
       {/* ── Main content (swipe-aware) ───────────────────────── */}
       <div
