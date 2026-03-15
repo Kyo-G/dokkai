@@ -6,82 +6,22 @@ import type { Settings, SentenceAnalysis, WordDetails, GrammarDetails } from '..
 
 function buildSentenceAnalysisPrompt(sentence: string, language: 'zh' | 'en'): string {
   if (language === 'en') {
-    return `You are a professional Japanese language teacher. Analyze the following Japanese sentence and return a strict JSON format with English explanations.
-
-Sentence to analyze: 「${sentence}」
-
-Return the following JSON structure (no extra text, JSON only):
-{
-  "furigana": "The full sentence with furigana added to all kanji using the format {漢字|よみ}; hiragana, katakana, punctuation and numbers stay as-is",
-  "structure": [
-    {"text": "sentence segment", "role": "Subject / Predicate / Object / Modifier / Complement / Conjunction / etc."}
-  ],
-  "grammar": [
-    {
-      "pattern": "grammar pattern",
-      "meaning": "meaning in English",
-      "usage": "usage explanation",
-      "jlpt": "N3"
-    }
-  ],
-  "words": [
-    {
-      "word": "dictionary form",
-      "reading": "kana reading",
-      "pos": "part of speech (noun / verb / adjective / adverb / particle / etc.)",
-      "meaning": "English meaning",
-      "pitch": 0,
-      "jlpt": "N3"
-    }
-  ]
-}
-
-Notes:
-- furigana: only annotate characters that are kanji in the original text using {漢字|よみ}; leave hiragana, katakana, punctuation and numbers unchanged. Never convert kana words to kanji just to annotate them. Example: {私|わたし}は{日本語|にほんご}が{好き|すき}です。（は、が、です are not annotated）
-- structure must cover the entire sentence without omissions
-- grammar should list only noteworthy grammar points; may be an empty array
-- words should list the main words in the sentence (exclude simple particles like は、が、を、に)
-- pitch is the Tokyo dialect pitch accent nucleus position: 0 = flat (heiban), 1 = head-high (atamadaka), 2+ = middle/tail-high; use an integer
-- jlpt: fill in the JLPT level (N5/N4/N3/N2/N1) for each word; leave as empty string if uncertain`
+    return `Analyze this Japanese sentence. Return JSON only, no other text.
+「${sentence}」
+{"furigana":"sentence with {漢字|よみ} on kanji only (never annotate kana)","structure":[{"text":"segment","role":"Subject/Predicate/Object/Modifier/Complement/Conjunction"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"dict form","reading":"kana","pos":"noun/verb/adj/adv/etc","meaning":"","pitch":0,"jlpt":"N3"}]}
+- furigana: kanji→{漢字|よみ}, leave kana/punctuation as-is
+- structure: cover full sentence
+- grammar: noteworthy points only, may be []
+- words: exclude simple particles (は が を に), pitch=Tokyo accent nucleus (0=flat)`
   }
 
-  return `你是一位专业的日语教师，请分析以下日语句子，用中文解释，返回严格的JSON格式。
-
-待分析句子：「${sentence}」
-
-请返回如下JSON结构（不要有任何多余的文字，只返回JSON）：
-{
-  "furigana": "整个句子，对所有汉字标注振假名，格式为{漢字|よみ}，假名和符号保持原样",
-  "structure": [
-    {"text": "句子片段", "role": "主语/谓语/宾语/修饰成分/补语/连词 等"}
-  ],
-  "grammar": [
-    {
-      "pattern": "语法形式",
-      "meaning": "意思",
-      "usage": "用法说明",
-      "jlpt": "N3"
-    }
-  ],
-  "words": [
-    {
-      "word": "单词原形",
-      "reading": "假名读音",
-      "pos": "词性（名词/动词/形容词/副词/助词 等）",
-      "meaning": "中文释义",
-      "pitch": 0,
-      "jlpt": "N3"
-    }
-  ]
-}
-
-注意：
-- furigana 字段：只对原文中本身就是汉字的部分加标注，格式{漢字|よみ}；平假名、片假名、符号、数字一律原样保留，禁止把假名词转换成汉字再标注。例：{私|わたし}は{日本語|にほんご}が{好き|すき}です。（「は」「が」「です」不加标注）
-- structure 要覆盖整个句子，不能遗漏
-- grammar 只列出值得学习的语法点，可以为空数组
-- words 列出句中主要单词（排除简单助词如は、が、を、に）
-- pitch 为东京方言音调核位置：0=平板型（无下降），1=头高型，2及以上=中高型/尾高型，填整数
-- jlpt 填该单词对应的 JLPT 等级（N5/N4/N3/N2/N1），不确定时填空字符串`
+  return `分析以下日语句子，只返回JSON，不要其他文字。
+「${sentence}」
+{"furigana":"句子加振假名，只对汉字标{漢字|よみ}，假名符号原样","structure":[{"text":"片段","role":"主语/谓语/宾语/修饰成分/补语/连词"}],"grammar":[{"pattern":"","meaning":"","usage":"","jlpt":"N3"}],"words":[{"word":"原形","reading":"假名","pos":"词性","meaning":"中文释义","pitch":0,"jlpt":"N3"}]}
+- furigana：只标汉字，假名/符号不动
+- structure：覆盖全句
+- grammar：值得学的语法点，可为[]
+- words：排除简单助词（は が を に），pitch为东京音调核（0=平板）`
 }
 
 function buildWordDetailsPrompt(word: string, reading: string, pos: string, language: 'zh' | 'en'): string {
@@ -224,7 +164,7 @@ async function callClaude(apiKey: string, prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
+      max_tokens: 1024,
       messages: [{ role: 'user', content: prompt }],
     }),
   })
@@ -246,7 +186,7 @@ async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2048,
+      max_tokens: 1024,
     }),
   })
   if (!response.ok) {
@@ -267,7 +207,7 @@ async function callDeepSeek(apiKey: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: 'deepseek-chat',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 2048,
+      max_tokens: 1024,
     }),
   })
   if (!response.ok) {
@@ -285,7 +225,7 @@ async function callGemini(apiKey: string, prompt: string): Promise<string> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 2048 },
+      generationConfig: { maxOutputTokens: 1024 },
     }),
   })
   if (!response.ok) {
