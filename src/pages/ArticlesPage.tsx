@@ -72,25 +72,28 @@ export default function ArticlesPage() {
     setAnalysisProgress(progress)
   }
 
-  async function runBackgroundAnalysis() {
+  async function runBackgroundAnalysis(orderedArticles: typeof articles) {
     const apiKey = settings.claudeKey || settings.openaiKey || settings.geminiKey || settings.deepseekKey
-    if (!apiKey) return
-    const unanalyzed = await getAllUnanalyzedSentences()
-    if (unanalyzed.length === 0) return
+    if (!apiKey || analyzeActiveRef.current) return
     analyzeActiveRef.current = true
-    for (const sentence of unanalyzed) {
+    // Process articles in display order (newest first) so the user's first article gets analyzed first
+    for (const article of orderedArticles) {
       if (!analyzeActiveRef.current) break
-      try {
-        const result = await analyzeSentence(settings, sentence.content)
+      const unanalyzed = await getAllUnanalyzedSentences(article.id)
+      for (const sentence of unanalyzed) {
         if (!analyzeActiveRef.current) break
-        await saveSentenceAnalysis(sentence.id, result)
-        setAnalysisProgress(prev => {
-          const next = new Map(prev)
-          const cur = next.get(sentence.article_id) ?? { total: 0, analyzed: 0 }
-          next.set(sentence.article_id, { ...cur, analyzed: cur.analyzed + 1 })
-          return next
-        })
-      } catch { /* skip failed sentence */ }
+        try {
+          const result = await analyzeSentence(settings, sentence.content)
+          if (!analyzeActiveRef.current) break
+          await saveSentenceAnalysis(sentence.id, result)
+          setAnalysisProgress(prev => {
+            const next = new Map(prev)
+            const cur = next.get(article.id) ?? { total: 0, analyzed: 0 }
+            next.set(article.id, { ...cur, analyzed: cur.analyzed + 1 })
+            return next
+          })
+        } catch { /* skip failed sentence */ }
+      }
     }
     analyzeActiveRef.current = false
   }
@@ -101,6 +104,7 @@ export default function ArticlesPage() {
       setArticles(data)
       setWordLevels(levels)
       setAnalysisProgress(progress)
+      runBackgroundAnalysis(data)
 
       const cached: Record<string, string> = {}
       for (const a of data) {
@@ -123,7 +127,6 @@ export default function ArticlesPage() {
       console.error(e)
     } finally {
       setLoading(false)
-      runBackgroundAnalysis()
     }
   }
 
