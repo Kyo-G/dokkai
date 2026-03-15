@@ -26,7 +26,7 @@ let dictStatus: DictStatus = 'idle'
 
 const IDB_DB    = 'dokkai-dict'
 const IDB_STORE = 'kv'
-const IDB_KEY   = 'words-v2'
+const IDB_KEY   = 'words-v3'
 
 // ── IndexedDB helpers ──────────────────────────────────────────────────
 function openIDB(): Promise<IDBDatabase> {
