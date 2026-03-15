@@ -232,10 +232,10 @@ export default function ArticlesPage() {
                         const prog = getProgress(article.id)
                         const pct = prog.total > 0 ? Math.round(prog.readIds.length / prog.total * 100) : 0
                         return (
-                          <div className="flex items-stretch">
-                            {/* Thumbnail */}
+                          <div className="flex items-stretch" style={{ height: 96 }}>
+                            {/* Thumbnail — 128×96 = 4:3 */}
                             {images[article.id] && (
-                              <div className="shrink-0 self-stretch overflow-hidden" style={{ width: 96 }}>
+                              <div className="shrink-0 overflow-hidden" style={{ width: 128 }}>
                                 <img
                                   src={images[article.id]}
                                   alt=""
@@ -245,7 +245,7 @@ export default function ArticlesPage() {
                             )}
 
                             {/* Content */}
-                            <div className="flex-1 min-w-0 px-3 py-3">
+                            <div className="flex-1 min-w-0 px-3 py-3 flex flex-col justify-center">
                               <span className="font-semibold text-gray-900 dark:text-gray-100 leading-snug line-clamp-2 text-sm">
                                 {article.title}
                               </span>
