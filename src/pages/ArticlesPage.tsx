@@ -235,12 +235,13 @@ export default function ArticlesPage() {
                           <div className="flex items-stretch">
                             {/* Thumbnail — 4:3 */}
                             {images[article.id] && (
-                              <img
-                                src={images[article.id]}
-                                alt=""
-                                className="shrink-0 self-stretch object-cover"
-                                style={{ width: 96, aspectRatio: '4/3' }}
-                              />
+                              <div className="shrink-0 self-stretch overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                                <img
+                                  src={images[article.id]}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
                             )}
 
                             {/* Content */}
