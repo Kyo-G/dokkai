@@ -56,10 +56,18 @@ export default function ArticlesPage() {
     baseOffset: number
   } | null>(null)
   const analyzeActiveRef = useRef(false)
+  const articlesRef = useRef<typeof articles>([])
 
   useEffect(() => {
     load()
-    const onVisible = () => { if (document.visibilityState === 'visible') refreshProgress() }
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      refreshProgress()
+      // Restart analysis if it was paused by the browser (e.g. app switched to background)
+      if (!analyzeActiveRef.current) {
+        runBackgroundAnalysis(articlesRef.current)
+      }
+    }
     document.addEventListener('visibilitychange', onVisible)
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
@@ -102,6 +110,7 @@ export default function ArticlesPage() {
     try {
       const [data, levels, progress] = await Promise.all([getArticles(), getArticleWordLevels(), getArticleAnalysisProgress()])
       setArticles(data)
+      articlesRef.current = data
       setWordLevels(levels)
       setAnalysisProgress(progress)
       runBackgroundAnalysis(data)
